@@ -16,8 +16,8 @@
       "source": "./plugins/review"
     },
     {
-      "name": "git-tools",
-      "source": "./plugins/git-tools"
+      "name": "tools",
+      "source": "./plugins/tools"
     }
   ]
 }

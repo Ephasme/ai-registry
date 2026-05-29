@@ -1,0 +1,18 @@
+{
+  "name": "tools",
+  "description": "General-purpose utilities — git workflow helpers (branch cleanup) and n8n workflow automation via the n8n-mcp server (node docs + validation out of the box; add your n8n URL + API key to create, update, and run workflows).",
+  "author": { "name": "Loup Peluso" },
+  "userConfig": {
+    "N8N_API_URL": {
+      "type": "string",
+      "title": "n8n instance URL",
+      "description": "Base URL of your n8n instance, e.g. https://your-instance.app.n8n.cloud or http://localhost:5678. Leave blank for docs-only mode (node documentation + workflow validation, no live instance)."
+    },
+    "N8N_API_KEY": {
+      "type": "string",
+      "title": "n8n API key",
+      "description": "API key from your n8n instance (Settings → n8n API). Enables workflow management tools. Stored in your system keychain, never written to the repo. Leave blank for docs-only mode.",
+      "sensitive": true
+    }
+  }
+}
