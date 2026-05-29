@@ -1,0 +1,5 @@
+{
+  "name": "planning",
+  "description": "Harden engineering plans and specs before implementation — iterative claim-against-code hardening and a final pre-handoff structural review.",
+  "author": { "name": "Loup Peluso" }
+}

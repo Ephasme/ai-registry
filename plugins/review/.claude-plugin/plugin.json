@@ -1,0 +1,5 @@
+{
+  "name": "review",
+  "description": "Review code and verify claims — code-quality scanning, forensic claim verification, and a sourced 'verified answer' mode.",
+  "author": { "name": "Loup Peluso" }
+}

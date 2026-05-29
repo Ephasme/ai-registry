@@ -1,0 +1,23 @@
+{
+  "name": "ai-registry",
+  "owner": {
+    "name": "Loup Peluso"
+  },
+  "metadata": {
+    "description": "Public registry of Claude Code customizations — plan hardening, code review & claim verification, and git utilities."
+  },
+  "plugins": [
+    {
+      "name": "planning",
+      "source": "./plugins/planning"
+    },
+    {
+      "name": "review",
+      "source": "./plugins/review"
+    },
+    {
+      "name": "git-tools",
+      "source": "./plugins/git-tools"
+    }
+  ]
+}
