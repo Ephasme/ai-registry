@@ -22,6 +22,10 @@
     {
       "name": "docs",
       "source": "./plugins/docs"
+    },
+    {
+      "name": "google-workspace",
+      "source": "./plugins/google-workspace"
     }
   ]
 }
