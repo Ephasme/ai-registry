@@ -9,6 +9,8 @@
 google_creds*.json
 google-secrets*.json
 *-secrets.json
+client_secret_*.json
+*.apps.googleusercontent.com.json
 !*.sops.json
 
 # Volatile / local Claude state
