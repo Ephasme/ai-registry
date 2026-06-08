@@ -5,6 +5,11 @@
 *.key
 .env
 .env.*
+# Plaintext Google OAuth client secrets — only the sops-encrypted *.sops.json is committed
+google_creds*.json
+google-secrets*.json
+*-secrets.json
+!*.sops.json
 
 # Volatile / local Claude state
 .claude.json

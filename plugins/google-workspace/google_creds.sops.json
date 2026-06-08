@@ -1,0 +1,22 @@
+{
+	"web": {
+		"client_id": "ENC[AES256_GCM,data:7iDumBvTLBCdEoO2cM+N8h6hGvT0Tii32ntj3O/UiwaPWwGLRWX9yDC82jmTQhUN2DnZMw8N9DvgZjrFaz2Dy6YoZfXjIFPVEQ==,iv:ULy+zj3PIf09jSOispI1v0VM0+o+mmRY2PiIB1dWNyo=,tag:cv7B3qH42ItdviHoBnmC3A==,type:str]",
+		"project_id": "ENC[AES256_GCM,data:dFOkewWy2XPRcYZnF+Ic1bYu,iv:2WCH5YQZ5XJW28r7nLPrS/vRL+3QRcNmbOI/+G27sRA=,tag:ihqJag1BXJnNqKE3f028/A==,type:str]",
+		"auth_uri": "ENC[AES256_GCM,data:ADxCokx3WPl61teCMGvma3IO4Uf0X/W0cS3YMYGgprm252nAskEgk/U=,iv:voMF8mJu1gVeZJBcjuWQGfXoJCwV9MlJPL3IGkQ8L6A=,tag:1cOap2UNrI3W7oVa04ge9A==,type:str]",
+		"token_uri": "ENC[AES256_GCM,data:dsRyJgOJNrBiqmwH8OkxQpV6czAkyd8IcnpzMMHK9hVyLKQ=,iv:b2AGB9p5AHpDeuG3gfGapatwY+tZGIg8pLJmwiG/x1w=,tag:h8wEZqzY5hWoKiYb6/tw7g==,type:str]",
+		"auth_provider_x509_cert_url": "ENC[AES256_GCM,data:dMWQR99vO8GgsF+g7VgS3q9T2vbTIV3pfeBfejn4xGiYz6mgHhIt1kzt,iv:PME5D0+rcIJOz33I/69O7VUYy2tVadCBcEzycWZUPPI=,tag:fhJeVQ2n3EkoJAQIqzrzQw==,type:str]",
+		"client_secret": "ENC[AES256_GCM,data:xOHJD00sKfG4mFl4SbWrPf74f9qThNyH4BY69MyY4bC1n7g=,iv:Sn8Ao4Gp/QNi19i0MXvYd676JPBLqZr1vh2Zed8iPo4=,tag:AYc236UHkJ6oHoAmp9SAJQ==,type:str]"
+	},
+	"sops": {
+		"age": [
+			{
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBLNUZ5bFhpM2FJdnJNQlZo\nT29BbW0rb1NaSEY2MVdERkVEV0x0eWp1YkMwClNsNk9BNzB5eGJmV2RNTVFLS1ZI\nNG0xTDJUaWd0YUZ0QzgxZzFvS3oxczQKLS0tIHJXZ0JiV1FnNS9kSC9OVGZocmo3\nd1JKekppTzBmWlB3V21TMDg2OXoySVEKKUXGk3mmGA7raycqTZFZyhuAGayA+/EA\nA0etihcY74l+lm0QknhvaKwznDJhPXbMG4bsmR7phqpw3UPZrn9ucg==\n-----END AGE ENCRYPTED FILE-----\n",
+				"recipient": "age1a83ee8atea5gq7mu7mjvjazwnyuy26aejtcfm37ffayepkzjkamstur93z"
+			}
+		],
+		"lastmodified": "2026-06-08T20:15:48Z",
+		"mac": "ENC[AES256_GCM,data:91DDd5WN6KhkWUAMg3qlVRfP57+h6RKEjR04hveaAsL8S74WQ1VFcQ0RVlPTRHt8MyWLju5Sn9qQbjGTZ0BRTRhyF+QnP6PgWB1iGTUeyxB0JD9h6N80L+kiIU4z7vWmtXyBr+CVCZ4HX8S5MQzs7jrF+gZkRtlf3x4wSrz2Bpw=,iv:u3kby+ncLsI2haI0l5NfLMfRpfHcPpVojz7y40+A8FU=,tag:75xvCe9ZdMD4Zo65Mkh6xQ==,type:str]",
+		"unencrypted_suffix": "_unencrypted",
+		"version": "3.13.1"
+	}
+}
