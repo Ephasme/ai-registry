@@ -4,7 +4,7 @@
     "name": "Loup Peluso"
   },
   "metadata": {
-    "description": "Public registry of Claude Code customizations — plan hardening, code review & claim verification, and git utilities."
+    "description": "Public registry of Claude Code customizations — plan hardening, code review & claim verification, git utilities, and codebase documentation generation."
   },
   "plugins": [
     {
@@ -18,6 +18,10 @@
     {
       "name": "tools",
       "source": "./plugins/tools"
+    },
+    {
+      "name": "docs",
+      "source": "./plugins/docs"
     }
   ]
 }

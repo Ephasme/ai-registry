@@ -1,0 +1,5 @@
+{
+  "name": "docs",
+  "description": "Generate documentation from a codebase — a coordinated fleet of subagents that builds a unified, indexed, code-verified documentation corpus (architecture, domain model, glossary, data models, gaps).",
+  "author": { "name": "Loup Peluso" }
+}

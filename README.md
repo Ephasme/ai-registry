@@ -11,6 +11,7 @@ sync. One source of truth, many laptops.
 | **planning** | `plan-hardening`, `spec-handoff-review` | Harden engineering plans and specs before implementation — iterative claim-against-code hardening, plus a final pre-handoff structural review. |
 | **review** | `code-quality-scan`, `fact-check-document`, `cite-or-refuse` | Review code and verify claims — structural code-quality scanning, forensic document claim-verification, and a sourced "answer only if you can cite it" mode. |
 | **tools** | `prune-branches` + _(n8n MCP server)_ | General utilities — git workflow helpers, plus n8n workflow automation via the [`n8n-mcp`](https://github.com/czlonkowski/n8n-mcp) server (node docs + validation out of the box; add your n8n URL + API key, prompted at install and stored in the keychain, to create, update, and run workflows). |
+| **docs** | `document-codebase` | Generate documentation from a codebase — a coordinated fleet of subagents builds a unified, indexed, code-verified corpus (architecture, domain model, ubiquitous-language glossary, data models, and an explicit gaps list). |
 
 ## Install
 
@@ -21,6 +22,7 @@ Add the marketplace, then install the plugins you want:
 /plugin install planning@ai-registry
 /plugin install review@ai-registry
 /plugin install tools@ai-registry     # prompts for n8n URL + API key (both optional)
+/plugin install docs@ai-registry
 /plugin marketplace update            # pull the latest after I push changes
 ```
 
