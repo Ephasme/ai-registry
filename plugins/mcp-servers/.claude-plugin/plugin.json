@@ -1,0 +1,18 @@
+{
+  "name": "mcp-servers",
+  "description": "Loup's self-hosted MCP tool servers, reached over the internet at https://mcp.loup-peluso.com behind Cloudflare Access (one tunnel, path-routed): Google Workspace for three accounts (perso, work, cassandra), Slack, and Google Maps. Supply the Cloudflare Access service-token credentials for that hostname to enable.",
+  "author": { "name": "Loup Peluso" },
+  "userConfig": {
+    "CF_ACCESS_CLIENT_ID": {
+      "type": "string",
+      "title": "Cloudflare Access Client ID",
+      "description": "The CF-Access-Client-Id for the mcp.loup-peluso.com Access service token (public identifier, ends in .access). Sent as a request header so Cloudflare Access lets the request through at the edge."
+    },
+    "CF_ACCESS_CLIENT_SECRET": {
+      "type": "string",
+      "title": "Cloudflare Access Client Secret",
+      "description": "The CF-Access-Client-Secret paired with the Client ID. Stored in your system keychain, never written to the repo.",
+      "sensitive": true
+    }
+  }
+}

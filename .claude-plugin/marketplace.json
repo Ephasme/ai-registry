@@ -24,8 +24,8 @@
       "source": "./plugins/docs"
     },
     {
-      "name": "google-workspace",
-      "source": "./plugins/google-workspace"
+      "name": "mcp-servers",
+      "source": "./plugins/mcp-servers"
     }
   ]
 }
