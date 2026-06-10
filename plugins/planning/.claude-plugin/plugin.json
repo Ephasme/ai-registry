@@ -1,5 +1,0 @@
-{
-  "name": "planning",
-  "description": "Author and harden engineering plans and specs — turn accumulated research into an implementation-ready technical spec (decision-first: ADRs for settled choices, proposals for open ones), then iteratively harden it with claim-against-code verification and a pre-handoff structural review.",
-  "author": { "name": "Loup Peluso" }
-}

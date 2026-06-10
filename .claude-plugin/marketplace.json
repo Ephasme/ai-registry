@@ -4,32 +4,16 @@
     "name": "Loup Peluso"
   },
   "metadata": {
-    "description": "Public registry of Claude Code customizations — plan hardening, code review & claim verification, git utilities, and codebase documentation generation."
+    "description": "Public registry of Claude Code customizations, organized by purpose — engineering, research, communication, workspace, navigation, finance, automation, and Claude Code meta-tooling. Skills and MCP servers are grouped by what you're doing, not by how they're built."
   },
   "plugins": [
-    {
-      "name": "planning",
-      "source": "./plugins/planning"
-    },
-    {
-      "name": "review",
-      "source": "./plugins/review"
-    },
-    {
-      "name": "tools",
-      "source": "./plugins/tools"
-    },
-    {
-      "name": "claude-tools",
-      "source": "./plugins/claude-tools"
-    },
-    {
-      "name": "docs",
-      "source": "./plugins/docs"
-    },
-    {
-      "name": "mcp-servers",
-      "source": "./plugins/mcp-servers"
-    }
+    { "name": "engineering",   "source": "./plugins/engineering" },
+    { "name": "research",      "source": "./plugins/research" },
+    { "name": "communication", "source": "./plugins/communication" },
+    { "name": "workspace",     "source": "./plugins/workspace" },
+    { "name": "navigation",    "source": "./plugins/navigation" },
+    { "name": "finance",       "source": "./plugins/finance" },
+    { "name": "automation",    "source": "./plugins/automation" },
+    { "name": "claude-tools",  "source": "./plugins/claude-tools" }
   ]
 }

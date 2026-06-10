@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bank": {
+      "command": "npx",
+      "args": ["@bank-mcp/server"]
+    }
+  }
+}

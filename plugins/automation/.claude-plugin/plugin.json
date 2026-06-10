@@ -1,6 +1,6 @@
 {
-  "name": "tools",
-  "description": "General-purpose utilities — git workflow helpers (branch cleanup) and n8n workflow automation via the n8n-mcp server (node docs + validation out of the box; add your n8n URL + API key to create, update, and run workflows).",
+  "name": "automation",
+  "description": "Automate workflows — build, validate, and run n8n workflows via the n8n-mcp server (czlonkowski/n8n-mcp). Node documentation and workflow validation work with no credentials; add your n8n instance URL + API key to create, update, and run workflows on a live instance.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "N8N_API_URL": {

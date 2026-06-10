@@ -1,0 +1,5 @@
+{
+  "name": "engineering",
+  "description": "Build and ship software — author and harden technical specs (writing-technical-specs, plan-hardening, spec-handoff-review), scan code for structural quality (code-quality-scan), generate code-verified documentation (document-codebase), and keep the repository tidy (prune-branches).",
+  "author": { "name": "Loup Peluso" }
+}
