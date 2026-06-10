@@ -1,6 +1,6 @@
 {
   "name": "mcp-servers",
-  "description": "Loup's MCP tool servers: self-hosted ones reached over the internet at https://mcp.loup-peluso.com behind Cloudflare Access (one tunnel, path-routed) — Google Workspace for three accounts (perso, work, cassandra), Slack, and Google Maps — plus Exa web search via its hosted remote MCP. Supply the Cloudflare Access service-token credentials for the self-hosted hostname, and an Exa API key for Exa, to enable.",
+  "description": "Loup's MCP tool servers: self-hosted ones reached over the internet at https://mcp.loup-peluso.com behind Cloudflare Access (one tunnel, path-routed) — Google Workspace for three accounts (perso, work, cassandra), Slack, Google Maps, and WhatsApp (wacli) — plus Exa web search via its hosted remote MCP. Supply the Cloudflare Access service-token credentials for the self-hosted hostname, and an Exa API key for Exa, to enable.",
   "author": {
     "name": "Loup Peluso"
   },

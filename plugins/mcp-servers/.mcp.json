@@ -40,6 +40,14 @@
         "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
       }
     },
+    "wacli": {
+      "type": "http",
+      "url": "https://mcp.loup-peluso.com/wacli/mcp",
+      "headers": {
+        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+      }
+    },
     "exa": {
       "type": "http",
       "url": "https://mcp.exa.ai/mcp",
