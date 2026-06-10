@@ -1,6 +1,6 @@
 {
   "name": "mcp-servers",
-  "description": "Loup's self-hosted MCP tool servers, reached over the internet at https://mcp.loup-peluso.com behind Cloudflare Access (one tunnel, path-routed): Google Workspace for three accounts (perso, work, cassandra), Slack, and Google Maps. Supply the Cloudflare Access service-token credentials for that hostname to enable.",
+  "description": "Loup's MCP tool servers: self-hosted ones reached over the internet at https://mcp.loup-peluso.com behind Cloudflare Access (one tunnel, path-routed) — Google Workspace for three accounts (perso, work, cassandra), Slack, and Google Maps — plus Exa web search via its hosted remote MCP. Supply the Cloudflare Access service-token credentials for the self-hosted hostname, and an Exa API key for Exa, to enable.",
   "author": {
     "name": "Loup Peluso"
   },
@@ -14,6 +14,11 @@
       "type": "string",
       "title": "Cloudflare Access Client Secret",
       "description": "The CF-Access-Client-Secret paired with the Client ID. Stored locally in settings.json (personal connector); maintainer copy is SOPS-encrypted in mcp-secrets.sops.json."
+    },
+    "EXA_API_KEY": {
+      "type": "string",
+      "title": "Exa API Key",
+      "description": "API key for Exa web search (https://dashboard.exa.ai/api-keys), sent as the x-api-key header to the hosted MCP at https://mcp.exa.ai/mcp. Stored locally in settings.json; maintainer copy is SOPS-encrypted in mcp-secrets.sops.json."
     }
   }
 }

@@ -39,6 +39,13 @@
         "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
         "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
       }
+    },
+    "exa": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp",
+      "headers": {
+        "x-api-key": "${user_config.EXA_API_KEY}"
+      }
     }
   }
 }
