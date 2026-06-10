@@ -1,0 +1,5 @@
+{
+  "name": "finance",
+  "description": "Money — read-only banking data via bank-mcp (elcukro/bank-mcp), a local server run with `npx @bank-mcp/server` over pluggable providers (Plaid, Teller, Enable Banking, Tink, or a mock). No credentials are configured here — set it up separately with `npx @bank-mcp/server init` (stored in ~/.bank-mcp/config.json); try `npx @bank-mcp/server --mock` for fake data first.",
+  "author": { "name": "Loup Peluso" }
+}
