@@ -1,0 +1,14 @@
+plugins/claude-tools/skills/plugin-config/SKILL.md
+  h_707d284fec310c 23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8de4e555d80141586afd723fc7051d3409f069c4",
+  "prompts": {},
+  "humans": {
+    "h_707d284fec310c": {
+      "author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
