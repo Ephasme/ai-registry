@@ -20,6 +20,10 @@
       "source": "./plugins/tools"
     },
     {
+      "name": "claude-tools",
+      "source": "./plugins/claude-tools"
+    },
+    {
       "name": "docs",
       "source": "./plugins/docs"
     },

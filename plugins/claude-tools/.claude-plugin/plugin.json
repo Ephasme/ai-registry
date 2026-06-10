@@ -1,0 +1,5 @@
+{
+  "name": "claude-tools",
+  "description": "Meta-tooling for Claude Code itself. Includes plugin-config: set, change, and diagnose plugin userConfig values (API keys, tokens, credentials) from the shell instead of the interactive /plugin prompt — with helpers to find where a value is stored (settings.json vs the OS keychain), set it across multiple CLAUDE_CONFIG_DIR profiles, and debug why ${user_config.KEY} resolves empty.",
+  "author": { "name": "Loup Peluso" }
+}
