@@ -1,5 +1,18 @@
 {
   "name": "finance",
-  "description": "Money — read-only banking data via bank-mcp (elcukro/bank-mcp), a local server run with `npx @bank-mcp/server` over pluggable providers (Plaid, Teller, Enable Banking, Tink, or a mock). No credentials are configured here — set it up separately with `npx @bank-mcp/server init` (stored in ~/.bank-mcp/config.json); try `npx @bank-mcp/server --mock` for fake data first.",
-  "author": { "name": "Loup Peluso" }
+  "description": "Money — read-only banking data (balances, transactions, spending) via bank-mcp, self-hosted on the NAS at https://mcp.loup-peluso.com/bank behind Cloudflare Access. Backed by Enable Banking (Revolut) read-only account information. Supply the Cloudflare Access service-token credentials to enable.",
+  "author": { "name": "Loup Peluso" },
+  "userConfig": {
+    "CF_ACCESS_CLIENT_ID": {
+      "type": "string",
+      "title": "Cloudflare Access Client ID",
+      "description": "The CF-Access-Client-Id for the mcp.loup-peluso.com Access service token (public identifier, ends in .access). Sent as a request header so Cloudflare Access lets the request through at the edge."
+    },
+    "CF_ACCESS_CLIENT_SECRET": {
+      "type": "string",
+      "title": "Cloudflare Access Client Secret",
+      "description": "The CF-Access-Client-Secret paired with the Client ID. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/cloudflare-access.sops.json.",
+      "sensitive": true
+    }
+  }
 }
