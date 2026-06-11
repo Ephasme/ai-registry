@@ -1,5 +1,13 @@
 {
   "name": "engineering",
-  "description": "Build and ship software — author and harden technical specs (writing-technical-specs, plan-hardening, spec-handoff-review), scan code for structural quality (code-quality-scan), generate code-verified documentation (document-codebase), and keep the repository tidy (prune-branches).",
-  "author": { "name": "Loup Peluso" }
+  "description": "Build and ship software — author and harden technical specs (writing-technical-specs, plan-hardening, spec-handoff-review), scan code for structural quality (code-quality-scan), generate code-verified documentation (document-codebase), and keep the repository tidy (prune-branches). Talk to GitHub (issues, PRs, repos, Actions) through the official remote MCP server; supply a GitHub personal access token to enable.",
+  "author": { "name": "Loup Peluso" },
+  "userConfig": {
+    "GITHUB_PAT": {
+      "type": "string",
+      "title": "GitHub Personal Access Token",
+      "description": "A GitHub PAT (fine-grained or classic) sent as the Authorization: Bearer header to GitHub's official remote MCP server at https://api.githubcopilot.com/mcp/. Grant only the scopes you need (e.g. repo, read:org). Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/github-pat.sops.json.",
+      "sensitive": true
+    }
+  }
 }
