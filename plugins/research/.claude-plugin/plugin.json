@@ -1,6 +1,6 @@
 {
   "name": "research",
-  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), and rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document). Supply an Exa API key to enable web search.",
+  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), and fetch pages that block ordinary scraping (403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) through BrightData's Web Unlocker (web-unlocker). Supply an Exa API key to enable web search.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "EXA_API_KEY": {
