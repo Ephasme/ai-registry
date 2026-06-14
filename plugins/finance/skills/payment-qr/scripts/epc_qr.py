@@ -6,8 +6,10 @@ Scannable par la quasi-totalité des apps bancaires FR/EU : pré-remplit un
 virement (bénéficiaire, IBAN, montant, libellé). L'utilisateur n'a plus qu'à
 valider dans son app.
 
-Pur Python : utilise `segno` (PNG natif, aucune dépendance binaire). Si le
-module est absent, le script tente `pip install segno` automatiquement.
+Pur Python, aucune dépendance binaire. Cherche un moteur QR déjà présent
+(`segno`, puis `qrcode`+Pillow) ; sinon installe `segno` via pip en s'adaptant
+au sandbox (PEP 668, site-packages verrouillé → venv isolé). Marche tel quel
+dans le sandbox Claude.ai, en CI, ou sur un Mac Homebrew.
 
 Exemples :
   python scripts/epc_qr.py --name "Carole Huet" --iban "FR76 3000 4000 0312 3456 7890 143" \
@@ -16,54 +18,110 @@ Exemples :
   python scripts/epc_qr.py --list
 """
 import argparse
+import importlib
 import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
+
+
+def _save_segno(payload, out_path):
+    import segno
+    segno.make(payload, error="m").save(out_path, scale=8, border=2)
+
+
+def _save_qrcode(payload, out_path):
+    import qrcode
+    qrcode.make(
+        payload,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=8,
+        border=2,
+    ).save(out_path)
+
+
+def _try_save(saver, payload, out_path):
+    """Tente un moteur déjà importable. True si le PNG est écrit.
+
+    ModuleNotFoundError / ImportError = lib (ou sa dépendance, ex. Pillow pour
+    qrcode) absente → moteur suivant. Toute autre erreur (payload, disque…) remonte.
+    """
+    try:
+        saver(payload, out_path)
+        return True
+    except (ModuleNotFoundError, ImportError):
+        return False
+
+
+def _pip_install_segno(python, *flags):
+    """`python -m pip install segno` silencieux. True si le code retour est 0."""
+    try:
+        r = subprocess.run(
+            [python, "-m", "pip", "install", "--quiet", *flags, "segno"],
+            capture_output=True, text=True,
+        )
+        return r.returncode == 0
+    except Exception:
+        return False
 
 
 def render_qr(payload, out_path):
-    """Écrit le QR (PNG) avec segno si dispo, sinon qrcode, sinon pip install segno.
+    """Écrit le QR (PNG). Correction M, marge 2, scale 8 → robuste au scan.
 
-    Niveau de correction M, marge 2, scale 8 → robuste au scan écran/print.
+    Ordre du moins au plus coûteux, pour marcher dans un sandbox sans rien
+    supposer de préinstallé ni de la politique pip :
+      1. segno puis qrcode s'ils sont déjà là (aucun réseau) ;
+      2. pip install segno dans l'interpréteur courant, en enchaînant les jeux
+         d'options qui survivent à PEP 668 et à un site-packages utilisateur ;
+      3. dernier recours : un venv isolé jetable (env courant non inscriptible
+         mais réseau dispo — cas du sandbox Claude.ai durci).
     """
-    # 1) segno (pur Python, PNG natif) si déjà présent
-    try:
-        import segno
-        segno.make(payload, error="m").save(out_path, scale=8, border=2)
-        return "segno"
-    except ModuleNotFoundError:
-        pass
+    # 1) moteur déjà présent — zéro réseau
+    for saver, name in ((_save_segno, "segno"), (_save_qrcode, "qrcode")):
+        if _try_save(saver, payload, out_path):
+            return name
 
-    # 2) qrcode (souvent présent dans les sandboxes) en fallback
-    try:
-        import qrcode
-        qrcode.make(
-            payload,
-            error_correction=qrcode.constants.ERROR_CORRECT_M,
-            box_size=8,
-            border=2,
-        ).save(out_path)
-        return "qrcode"
-    except ModuleNotFoundError:
-        pass
+    # 2) installer segno dans l'interpréteur courant : défaut → --user →
+    #    --break-system-packages (PEP 668) → les deux.
+    for flags in ([], ["--user"], ["--break-system-packages"],
+                  ["--user", "--break-system-packages"]):
+        if _pip_install_segno(sys.executable, *flags):
+            importlib.invalidate_caches()
+            if _try_save(_save_segno, payload, out_path):
+                return "segno (pip {})".format(" ".join(flags) or "défaut")
 
-    # 3) dernier recours : installer segno via pip
+    # 3) venv isolé jetable : site-packages courant verrouillé mais réseau OK.
     try:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "--quiet", "segno"],
-            check=True,
-        )
-        import segno
-        segno.make(payload, error="m").save(out_path, scale=8, border=2)
-        return "segno"
+        import venv
+        vdir = tempfile.mkdtemp(prefix="payment-qr-venv-")
+        venv.create(vdir, with_pip=True)
+        bindir = "Scripts" if os.name == "nt" else "bin"
+        vpy = os.path.join(vdir, bindir, "python.exe" if os.name == "nt" else "python")
+        if _pip_install_segno(vpy):
+            payload_file = os.path.join(vdir, "payload.txt")
+            with open(payload_file, "w", encoding="utf-8") as f:
+                f.write(payload)
+            child = (
+                "import segno,sys;"
+                "p=open(sys.argv[1],encoding='utf-8').read();"
+                "segno.make(p,error='m').save(sys.argv[2],scale=8,border=2)"
+            )
+            r = subprocess.run([vpy, "-c", child, payload_file, out_path],
+                               capture_output=True, text=True)
+            if r.returncode == 0 and os.path.exists(out_path):
+                return "segno (venv isolé)"
     except Exception:
-        sys.stderr.write(
-            '❌ aucune lib QR disponible (segno/qrcode) et installation impossible.\n'
-            "   Installe-en une : pip install segno\n"
-        )
-        sys.exit(3)
+        pass
+
+    # 4) abandon — message actionnable
+    sys.stderr.write(
+        "❌ Aucun moteur QR disponible et installation impossible.\n"
+        "   segno/qrcode absents, et pip a échoué (pas de réseau ou env verrouillé).\n"
+        "   Installe-en un manuellement : pip install segno   (ou : pip install qrcode pillow)\n"
+    )
+    sys.exit(3)
 
 
 def registry_path(explicit=None):
