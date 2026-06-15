@@ -6,6 +6,10 @@
       "headers": {
         "Authorization": "Bearer ${user_config.GITHUB_PAT}"
       }
+    },
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp"
     }
   }
 }
