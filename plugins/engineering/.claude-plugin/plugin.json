@@ -1,12 +1,18 @@
 {
   "name": "engineering",
-  "description": "Build and ship software — author and harden technical specs (writing-technical-specs, plan-hardening, spec-handoff-review), scan code for structural quality (code-quality-scan), generate code-verified documentation (document-codebase), and keep the repository tidy (prune-branches). Talk to GitHub (issues, PRs, repos, Actions) through the official remote MCP server; supply a GitHub personal access token to enable. Talk to Linear (issues, projects, cycles) through its official remote MCP server, authenticated via interactive OAuth (no token to configure).",
+  "description": "Build and ship software — author and harden technical specs (writing-technical-specs, plan-hardening, spec-handoff-review), scan code for structural quality (code-quality-scan), generate code-verified documentation (document-codebase), and keep the repository tidy (prune-branches). Talk to GitHub (issues, PRs, repos, Actions) through the official remote MCP server; supply a GitHub personal access token to enable. Talk to Linear (issues, projects, cycles) through its official remote MCP server; supply a Linear personal API key to enable.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "GITHUB_PAT": {
       "type": "string",
       "title": "GitHub Personal Access Token",
       "description": "A GitHub PAT (fine-grained or classic) sent as the Authorization: Bearer header to GitHub's official remote MCP server at https://api.githubcopilot.com/mcp/. Grant only the scopes you need (e.g. repo, read:org). Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/github-pat.sops.json.",
+      "sensitive": true
+    },
+    "LINEAR_API_KEY": {
+      "type": "string",
+      "title": "Linear Personal API Key",
+      "description": "A Linear personal API key (Linear → Settings → Security & access → Personal API keys) sent as the Authorization: Bearer header to Linear's official remote MCP server at https://mcp.linear.app/mcp. Provides non-interactive auth as an alternative to the browser OAuth flow. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/linear-api-key.sops.json.",
       "sensitive": true
     }
   }

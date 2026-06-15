@@ -13,6 +13,8 @@ google-secrets*.json
 *-secrets.json
 client_secret_*.json
 *.apps.googleusercontent.com.json
+# Any plaintext secret dropped into secrets/ stays local; only the *.sops.json ciphertext is committed
+secrets/*.json
 !*.sops.json
 
 # Volatile / local Claude state
