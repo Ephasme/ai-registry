@@ -275,7 +275,7 @@ Healthy state: dependencies are passed explicitly; mutable scope is as narrow as
 
 ## Part 2: Detailed Examples
 
-Each example follows the 7-field finding template from prompt.md.
+Each example follows the 7-field finding template from SKILL.md.
 
 ### Example 1: Architecture -- God Object (High)
 
