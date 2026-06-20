@@ -1,6 +1,6 @@
 {
   "name": "navigation",
-  "description": "Places, directions, and EV trip planning — Google Maps and a Tesla Fleet trip planner, self-hosted at https://mcp.loup-peluso.com behind Cloudflare Access. Supply the Cloudflare Access service-token credentials to enable.",
+  "description": "Places, directions, EV trip planning, and Tesla vehicle control — Google Maps plus a Tesla Fleet server (trip planning + live controls: lock, climate, charging) self-hosted at https://mcp.loup-peluso.com behind Cloudflare Access. Supply the Cloudflare Access service-token credentials to enable.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "CF_ACCESS_CLIENT_ID": {
