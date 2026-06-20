@@ -1,6 +1,6 @@
 {
   "name": "finance",
-  "description": "Money — generate scannable SEPA payment QR codes (EPC069-12) to pre-fill a bank transfer (payment-qr), and read read-only banking data (balances, transactions, spending) via bank-mcp, self-hosted on the NAS at https://mcp.loup-peluso.com/bank behind Cloudflare Access. Backed by Enable Banking (Revolut) read-only account information. Supply the Cloudflare Access service-token credentials to enable.",
+  "description": "Money — generate scannable SEPA payment QR codes (EPC069-12) to pre-fill a bank transfer (payment-qr), read read-only banking data (balances, transactions, spending) via bank-mcp, and manage shared expenses, groups, friends and balances on Splitwise via splitwise-mcp (the full Splitwise API v3.0). Both servers are self-hosted on the NAS at https://mcp.loup-peluso.com (/bank, /splitwise) behind Cloudflare Access; bank is backed by Enable Banking (Revolut) read-only account information, and each server holds its own provider key server-side. Supply the Cloudflare Access service-token credentials to enable.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "CF_ACCESS_CLIENT_ID": {

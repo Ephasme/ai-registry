@@ -7,6 +7,14 @@
         "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
         "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
       }
+    },
+    "splitwise": {
+      "type": "http",
+      "url": "https://mcp.loup-peluso.com/splitwise/mcp",
+      "headers": {
+        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+      }
     }
   }
 }
