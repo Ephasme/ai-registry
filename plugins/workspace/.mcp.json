@@ -2,26 +2,26 @@
   "mcpServers": {
     "workspace-perso": {
       "type": "http",
-      "url": "https://mcp.loup-peluso.com/perso/mcp",
+      "url": "https://google-perso.loup-peluso.com/mcp",
       "headers": {
-        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
-        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+        "CF-Access-Client-Id": "${user_config.GOOGLE_PERSO_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.GOOGLE_PERSO_CF_ACCESS_CLIENT_SECRET}"
       }
     },
     "workspace-work": {
       "type": "http",
-      "url": "https://mcp.loup-peluso.com/work/mcp",
+      "url": "https://google-work.loup-peluso.com/mcp",
       "headers": {
-        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
-        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+        "CF-Access-Client-Id": "${user_config.GOOGLE_WORK_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.GOOGLE_WORK_CF_ACCESS_CLIENT_SECRET}"
       }
     },
     "workspace-cassandra": {
       "type": "http",
-      "url": "https://mcp.loup-peluso.com/cassandra/mcp",
+      "url": "https://google.cassandradesign.pro/mcp",
       "headers": {
-        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
-        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+        "CF-Access-Client-Id": "${user_config.CASSANDRA_GOOGLE_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.CASSANDRA_GOOGLE_CF_ACCESS_CLIENT_SECRET}"
       }
     }
   }

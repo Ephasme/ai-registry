@@ -1,17 +1,28 @@
 {
   "name": "finance",
-  "description": "Money — generate scannable SEPA payment QR codes (EPC069-12) to pre-fill a bank transfer (payment-qr), read read-only banking data (balances, transactions, spending) via bank-mcp, and manage shared expenses, groups, friends and balances on Splitwise via splitwise-mcp (the full Splitwise API v3.0). Both servers are self-hosted on the NAS at https://mcp.loup-peluso.com (/bank, /splitwise) behind Cloudflare Access; bank is backed by Enable Banking (Revolut) read-only account information, and each server holds its own provider key server-side. Supply the Cloudflare Access service-token credentials to enable.",
+  "description": "Money — generate scannable SEPA payment QR codes (EPC069-12) to pre-fill a bank transfer (payment-qr), read read-only banking data (balances, transactions, spending) via bank-mcp, and manage shared expenses, groups, friends and balances on Splitwise via splitwise-mcp (the full Splitwise API v3.0). Both servers are self-hosted on the NAS, each on its own dedicated host behind Cloudflare Access; bank is backed by Enable Banking (Revolut) read-only account information, and each server holds its own provider key server-side. Supply the per-server Cloudflare Access service-token credentials to enable.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
-    "CF_ACCESS_CLIENT_ID": {
+    "BANK_CF_ACCESS_CLIENT_ID": {
       "type": "string",
-      "title": "Cloudflare Access Client ID",
-      "description": "The CF-Access-Client-Id for the mcp.loup-peluso.com Access service token (public identifier, ends in .access). Sent as a request header so Cloudflare Access lets the request through at the edge."
+      "title": "Bank — CF Access Client ID",
+      "description": "CF-Access-Client-Id for bank.loup-peluso.com (per-MCP service token; ends in .access)."
     },
-    "CF_ACCESS_CLIENT_SECRET": {
+    "BANK_CF_ACCESS_CLIENT_SECRET": {
       "type": "string",
-      "title": "Cloudflare Access Client Secret",
-      "description": "The CF-Access-Client-Secret paired with the Client ID. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/cloudflare-access.sops.json.",
+      "title": "Bank — CF Access Client Secret",
+      "description": "CF-Access-Client-Secret for bank.loup-peluso.com. Stored in the system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
+      "sensitive": true
+    },
+    "SPLITWISE_CF_ACCESS_CLIENT_ID": {
+      "type": "string",
+      "title": "Splitwise — CF Access Client ID",
+      "description": "CF-Access-Client-Id for splitwise.loup-peluso.com (per-MCP service token; ends in .access)."
+    },
+    "SPLITWISE_CF_ACCESS_CLIENT_SECRET": {
+      "type": "string",
+      "title": "Splitwise — CF Access Client Secret",
+      "description": "CF-Access-Client-Secret for splitwise.loup-peluso.com. Stored in the system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
       "sensitive": true
     }
   }

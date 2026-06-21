@@ -1,17 +1,28 @@
 {
   "name": "communication",
-  "description": "Reach people — Slack and WhatsApp (wacli), self-hosted at https://mcp.loup-peluso.com behind Cloudflare Access. Supply the Cloudflare Access service-token credentials to enable.",
+  "description": "Reach people — Slack and WhatsApp (wacli), each on its own dedicated host behind Cloudflare Access. Supply the per-server Cloudflare Access service-token credentials to enable.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
-    "CF_ACCESS_CLIENT_ID": {
+    "SLACK_CF_ACCESS_CLIENT_ID": {
       "type": "string",
-      "title": "Cloudflare Access Client ID",
-      "description": "The CF-Access-Client-Id for the mcp.loup-peluso.com Access service token (public identifier, ends in .access). Sent as a request header so Cloudflare Access lets the request through at the edge."
+      "title": "Slack — CF Access Client ID",
+      "description": "CF-Access-Client-Id for slack.loup-peluso.com (per-MCP service token; ends in .access)."
     },
-    "CF_ACCESS_CLIENT_SECRET": {
+    "SLACK_CF_ACCESS_CLIENT_SECRET": {
       "type": "string",
-      "title": "Cloudflare Access Client Secret",
-      "description": "The CF-Access-Client-Secret paired with the Client ID. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/cloudflare-access.sops.json.",
+      "title": "Slack — CF Access Client Secret",
+      "description": "CF-Access-Client-Secret for slack.loup-peluso.com. Stored in the system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
+      "sensitive": true
+    },
+    "WACLI_CF_ACCESS_CLIENT_ID": {
+      "type": "string",
+      "title": "Wacli — CF Access Client ID",
+      "description": "CF-Access-Client-Id for wacli.loup-peluso.com (per-MCP service token; ends in .access)."
+    },
+    "WACLI_CF_ACCESS_CLIENT_SECRET": {
+      "type": "string",
+      "title": "Wacli — CF Access Client Secret",
+      "description": "CF-Access-Client-Secret for wacli.loup-peluso.com. Stored in the system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
       "sensitive": true
     }
   }

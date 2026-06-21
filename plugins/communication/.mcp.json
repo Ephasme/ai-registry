@@ -2,18 +2,18 @@
   "mcpServers": {
     "slack": {
       "type": "http",
-      "url": "https://mcp.loup-peluso.com/slack/mcp",
+      "url": "https://slack.loup-peluso.com/mcp",
       "headers": {
-        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
-        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+        "CF-Access-Client-Id": "${user_config.SLACK_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.SLACK_CF_ACCESS_CLIENT_SECRET}"
       }
     },
     "wacli": {
       "type": "http",
-      "url": "https://mcp.loup-peluso.com/wacli/mcp",
+      "url": "https://wacli.loup-peluso.com/mcp",
       "headers": {
-        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
-        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+        "CF-Access-Client-Id": "${user_config.WACLI_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.WACLI_CF_ACCESS_CLIENT_SECRET}"
       }
     }
   }

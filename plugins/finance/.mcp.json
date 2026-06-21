@@ -2,18 +2,18 @@
   "mcpServers": {
     "bank": {
       "type": "http",
-      "url": "https://mcp.loup-peluso.com/bank/mcp",
+      "url": "https://bank.loup-peluso.com/mcp",
       "headers": {
-        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
-        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+        "CF-Access-Client-Id": "${user_config.BANK_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.BANK_CF_ACCESS_CLIENT_SECRET}"
       }
     },
     "splitwise": {
       "type": "http",
-      "url": "https://mcp.loup-peluso.com/splitwise/mcp",
+      "url": "https://splitwise.loup-peluso.com/mcp",
       "headers": {
-        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
-        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+        "CF-Access-Client-Id": "${user_config.SPLITWISE_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.SPLITWISE_CF_ACCESS_CLIENT_SECRET}"
       }
     }
   }
