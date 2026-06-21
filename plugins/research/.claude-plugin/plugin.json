@@ -9,15 +9,15 @@
       "description": "API key for Exa web search (https://dashboard.exa.ai/api-keys), sent as the x-api-key header to the hosted MCP at https://mcp.exa.ai/mcp. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/exa.sops.json.",
       "sensitive": true
     },
-    "CF_ACCESS_CLIENT_ID": {
+    "PLAYWRIGHT_CF_ACCESS_CLIENT_ID": {
       "type": "string",
-      "title": "Cloudflare Access Client ID",
-      "description": "The CF-Access-Client-Id for the mcp.loup-peluso.com Access service token (public identifier, ends in .access). Sent as a request header so Cloudflare Access lets the request through at the edge."
+      "title": "Playwright — CF Access Client ID",
+      "description": "CF-Access-Client-Id for playwright.loup-peluso.com (per-MCP service token; public identifier, ends in .access)."
     },
-    "CF_ACCESS_CLIENT_SECRET": {
+    "PLAYWRIGHT_CF_ACCESS_CLIENT_SECRET": {
       "type": "string",
-      "title": "Cloudflare Access Client Secret",
-      "description": "The CF-Access-Client-Secret paired with the Client ID. Stored in your system keychain, never written to the repo.",
+      "title": "Playwright — CF Access Client Secret",
+      "description": "CF-Access-Client-Secret for playwright.loup-peluso.com. Stored in your system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
       "sensitive": true
     }
   }

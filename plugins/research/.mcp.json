@@ -9,10 +9,10 @@
     },
     "playwright": {
       "type": "http",
-      "url": "https://mcp.loup-peluso.com/playwright/mcp",
+      "url": "https://playwright.loup-peluso.com/mcp",
       "headers": {
-        "CF-Access-Client-Id": "${user_config.CF_ACCESS_CLIENT_ID}",
-        "CF-Access-Client-Secret": "${user_config.CF_ACCESS_CLIENT_SECRET}"
+        "CF-Access-Client-Id": "${user_config.PLAYWRIGHT_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.PLAYWRIGHT_CF_ACCESS_CLIENT_SECRET}"
       }
     }
   }
