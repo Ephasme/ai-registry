@@ -1,12 +1,23 @@
 {
   "name": "research",
-  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), and fetch pages that block ordinary scraping (403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) through BrightData's Web Unlocker (web-unlocker). Supply an Exa API key to enable web search.",
+  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), fetch pages that block ordinary scraping (403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) through BrightData's Web Unlocker (web-unlocker), and automate a real headless Chromium browser (Playwright) for JS-heavy or interactive pages. Supply an Exa API key to enable web search; supply Cloudflare Access credentials to enable Playwright.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "EXA_API_KEY": {
       "type": "string",
       "title": "Exa API Key",
       "description": "API key for Exa web search (https://dashboard.exa.ai/api-keys), sent as the x-api-key header to the hosted MCP at https://mcp.exa.ai/mcp. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/exa.sops.json.",
+      "sensitive": true
+    },
+    "CF_ACCESS_CLIENT_ID": {
+      "type": "string",
+      "title": "Cloudflare Access Client ID",
+      "description": "The CF-Access-Client-Id for the mcp.loup-peluso.com Access service token (public identifier, ends in .access). Sent as a request header so Cloudflare Access lets the request through at the edge."
+    },
+    "CF_ACCESS_CLIENT_SECRET": {
+      "type": "string",
+      "title": "Cloudflare Access Client Secret",
+      "description": "The CF-Access-Client-Secret paired with the Client ID. Stored in your system keychain, never written to the repo.",
       "sensitive": true
     }
   }
