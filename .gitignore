@@ -7,6 +7,8 @@
 .env.*
 # payment-qr skill registry — holds beneficiary IBANs, must stay local
 beneficiaries.json
+# receipt-splitwise card→person map — holds CB last-4s, must stay local
+receipt-cards.json
 # Plaintext Google OAuth client secrets — only the sops-encrypted *.sops.json is committed
 google_creds*.json
 google-secrets*.json
