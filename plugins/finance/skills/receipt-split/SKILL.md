@@ -63,7 +63,7 @@ Run every input through the prep script — it decodes HEIC (default iPhone form
 EXIF, sets orientation, and **downscales + re-encodes** so the image is small *before* it
 ever reaches a subagent:
 ```bash
-python scripts/orient.py <input> --out /tmp/<name>_upright.jpg
+python scripts/prep.py <input> --out /tmp/<name>_upright.jpg
 ```
 
 **Why compress.** A raw phone shot is 12+ MP and several MB; that whole image gets base64'd
@@ -86,8 +86,8 @@ hold a sideways receipt). So treat orientation as something the **model** confir
 step 2's extractor reports the image is rotated/upside-down or its numbers fail the
 cross-check (step 3), re-orient and re-extract:
 ```bash
-python scripts/orient.py <input> --rotate 90    # or 270 / 180 (degrees clockwise)
-python scripts/orient.py <input> --all          # emit r0/r90/r180/r270; let Sonnet pick the legible one
+python scripts/prep.py <input> --rotate 90    # or 270 / 180 (degrees clockwise)
+python scripts/prep.py <input> --all          # emit r0/r90/r180/r270; let Sonnet pick the legible one
 ```
 
 **Missing tooling.** The script needs Pillow (`pip install Pillow`) or macOS `sips`; for
@@ -152,7 +152,7 @@ fresh one) with a concrete comment, e.g.:
 
 Loop at most ~2 times. If it still won't reconcile, **show the user both readings and ask**
 rather than posting a number you can't verify. (When re-reading is blocked by orientation,
-re-run `orient.py --rotate …` or `--all` from step 1 and hand over the upright image.)
+re-run `prep.py --rotate …` or `--all` from step 1 and hand over the upright image.)
 
 ### 4. Resolve the Splitwise identities (once for the batch)
 
@@ -227,7 +227,7 @@ distinctly — a partial batch should be obvious. Don't silently retry; you migh
 
 **Input:** "ajoute ce ticket sur splitwise, c'est Cassandra qui a payé" + `IMG_0228.HEIC`
 
-1. `orient.py` → upright JPG. A Sonnet subagent exports items, discounts, totals, and the
+1. `prep.py` → upright, compressed JPG. A Sonnet subagent exports items, discounts, totals, and the
    loyalty block: `total 23.94`, `total_crosscheck 23.94`, `tva_ttc 23.94`,
    `card_last4 null`, `loyalty {client_name:"De Carvalho", merchant_program:"Monoprix M'"}`.
 2. Reconcile: `Σ items − discounts + fees` ≈ 23.94 = total = crosscheck = TTC → confident.

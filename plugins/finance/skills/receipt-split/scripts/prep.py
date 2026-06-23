@@ -13,8 +13,8 @@ Two things wreck a vision model's read of a phone receipt photo:
    can override per receipt (see below).
 
 Usage:
-    python orient.py <input> [--out PATH] [--rotate auto|cw|ccw|0|90|180|270] [--all]
-                     [--outdir DIR] [--max-dim N] [--quality Q]
+    python prep.py <input> [--out PATH] [--rotate auto|cw|ccw|0|90|180|270] [--all]
+                   [--outdir DIR] [--max-dim N] [--quality Q]
 
     <input>          .heic/.heif/.jpg/.jpeg/.png (HEIC is converted automatically)
     --rotate auto    (default) if the image is landscape (wider than tall), rotate it 90°
@@ -87,7 +87,7 @@ def _save_rotation_sips(src, degrees, out, max_dim, quality):
 def main():
     args = sys.argv[1:]
     if not args:
-        sys.exit("usage: python orient.py <input> [--out PATH] [--rotate auto|cw|ccw|0|90|180|270] [--all] [--outdir DIR] [--max-dim N] [--quality Q]")
+        sys.exit("usage: python prep.py <input> [--out PATH] [--rotate auto|cw|ccw|0|90|180|270] [--all] [--outdir DIR] [--max-dim N] [--quality Q]")
     src = args[0]
     if not os.path.isfile(src):
         sys.exit(f"no such file: {src}")
