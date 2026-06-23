@@ -33,14 +33,14 @@ happen on a guess.
 0  IDENTIFY INPUT   → which ticket/spec, from where
 1  UNDERSTAND       → read + ground in code; restate; GATE: ask if unclear
 2  PLAN             → writing-plans  (else plan mode)
-3  HARDEN           → plan-hardening, loop-until-clean (cap 3)
-4  HANDOFF REVIEW   → spec-handoff-review, loop-until-clean (cap 3)
-5  DEEP REVIEW      → only if ≥3 critical/major surfaced in 3–4, or asked (multi-agent workflow)
+3  HARDEN           → plan-hardening, loop-until-clean
+4  HANDOFF REVIEW   → spec-handoff-review, loop-until-clean
+5  DEEP REVIEW      → only if 3–4 kept surfacing serious findings, or asked (multi-agent workflow)
 6  IMPLEMENT        → executing-plans  (else implement directly)
 7  VERIFY           → build/test/lint must pass, with evidence
 8  BRANCH→PR        → GATE: confirm before push & PR; link the ticket
 9  CODE REVIEW      → code-review (working diff) / review (open PR)
-10 FIX FINDINGS     → address all, push, re-review, loop-until-clean (cap 3)
+10 FIX FINDINGS     → address all, push, re-review, loop-until-clean
 11 HANDOFF          → summary, PR link, leftovers → back to the human
 ```
 
@@ -48,13 +48,13 @@ happen on a guess.
 
 These four behaviours recur throughout; internalize them once so each phase stays short.
 
-- **Loop-until-clean, with a cap.** Whenever a phase says "fix all issues", it means:
-  fix every **critical/major** finding, then re-run the reviewer; repeat until a clean
-  pass (no critical/major) — capped at **3 rounds**. Minor/nice-to-have findings don't
-  block; note them for the handoff. If you hit the cap still dirty, **stop and surface
-  the remaining findings to the human** with what you tried. The cap exists to prevent
-  thrash and infinite loops; surfacing-not-hiding keeps the human's trust that "clean"
-  means clean.
+- **Loop-until-clean — converge, don't count.** Whenever a phase says "fix all issues", it
+  means: fix every **critical/major** finding, then re-run the reviewer; repeat until a clean
+  pass (no critical/major). Watch for **diminishing returns** — if a round stops reducing the
+  serious findings, or the same ones keep resurfacing, you're plateauing: **stop and surface
+  what's left to the human** with what you tried, rather than grinding. Convergence (or a clear
+  plateau), not a fixed number of rounds, is the stop signal — and it's what keeps "clean"
+  meaning clean. Minor/nice-to-have findings don't block; carry them to the handoff.
 
 - **Check availability, then branch — and say which path you took.** Several phases read
   "IF skill X is available → use it, ELSE fallback". Actually check whether the named
@@ -97,7 +97,7 @@ how the ticket imagines it. Use the **Explore** agent (or search + targeted read
 the affected components and read any files the ticket references.
 
 Then **restate**, concisely:
-- **Goal** — the outcome in one or two sentences.
+- **Goal** — the outcome, stated briefly.
 - **Scope** — what's in, and explicitly what's out.
 - **Acceptance criteria** — how "done" is judged.
 - **Affected components** — files/modules/services you expect to touch.
@@ -125,33 +125,35 @@ next phase.
 
 Run the plan through **`engineering:plan-hardening`**, which verifies the plan's claims
 against the codebase and surfaces unhandled collateral damage. Fix every critical/major
-finding and re-run (loop-until-clean, cap 3 — see Operating rules). If `plan-hardening`
+finding and re-run (loop-until-clean — see Operating rules). If `plan-hardening`
 isn't available, do an inline equivalent: re-read the plan adversarially against the code,
 checking each claim and each "this won't affect X" assumption, and fix what breaks.
 
-**Exit:** a hardening pass with no critical/major findings (or the cap reached and the
+**Exit:** a hardening pass with no critical/major findings (or a plateau reached and the
 remainder surfaced).
 
 ## Phase 4 — HANDOFF REVIEW
 
 Run **`engineering:spec-handoff-review`** — the closing structural pass that hunts for
 ambiguity, missing contracts, and unstated assumptions that would let two engineers build
-incompatible things. Fix all issues; re-run until clean (cap 3). Fallback if unavailable:
+incompatible things. Fix all issues; re-run until clean. Fallback if unavailable:
 review the plan yourself for two-implementer divergence, hidden assumptions, and unhandled
 state transitions, and resolve them.
 
-**Exit:** a clean handoff review (or cap reached + surfaced).
+**Exit:** a clean handoff review (or a plateau reached + surfaced).
 
 ## Phase 5 — DEEP REVIEW (conditional)
 
 This is heavier multi-agent scrutiny, run **only when warranted** — it costs real tokens, so
 it's gated:
 
-- **TRIGGER:** phases 3–4 together surfaced a **high volume of serious problems — ≥ 3
-  critical/major findings total** — OR the human explicitly asks for a deep review. If
-  neither holds, **skip to Phase 6** and say you skipped it and why (the plan was clean
-  enough). Invoking this skill is itself the opt-in for the multi-agent work this phase
-  uses, so no extra permission is needed when the trigger fires.
+- **TRIGGER:** phases 3–4 **kept surfacing serious problems** — a steady stream of
+  critical/major findings that says the plan is genuinely error-prone, not a one-off — OR the
+  human asks for a deep review. If neither holds, **skip to Phase 6** and say you skipped it
+  and why (the plan held up). Invoking this skill opts you into the multi-agent work in
+  general; but because it fans out a reviewer per scope (plus a verifier per finding), if the
+  plan is large enough that the run would spawn a lot of agents — more than ~20, say —
+  **confirm with the human before launching**, since it costs real tokens.
 
 - **WHAT:** spawn a dynamic multi-agent workflow that (a) splits the plan into scopes and has
   one **Sonnet 4.6** agent review each scope for bugs/risks; (b) has a **second Sonnet 4.6**
@@ -160,8 +162,9 @@ it's gated:
   Opus 4.8 orchestrator)** to fix in the plan. The find→verify split keeps plausible-but-wrong
   findings from surviving; the independent verifier is the point.
 
-The ready-to-adapt workflow script, the per-stage output schemas, and the fallback for when
-the Workflow tool isn't available are in
+The workflow is **pre-written and bundled** — run the script file as-is, handing it the plan.
+How to run it (`Workflow({ scriptPath, args })`), the fan-out cost guard, what it returns, and
+the no-Workflow fallback are in
 [`references/deep-review-workflow.md`](references/deep-review-workflow.md).
 
 **Exit:** a reconciled plan with every *confirmed* issue fixed.
@@ -218,8 +221,8 @@ State which reviewer ran. **Exit:** a review with its findings enumerated.
 
 ## Phase 10 — FIX REVIEW FINDINGS
 
-Address **every** finding, push the fixes, and **re-review until clean** (loop-until-clean,
-cap 3). Re-run Phase 7's verification after fixes so you don't trade a review nit for a broken
+Address **every** finding, push the fixes, and **re-review until clean** (loop-until-clean).
+Re-run Phase 7's verification after fixes so you don't trade a review nit for a broken
 build. If posting review-comment replies, that's outward-facing — confirm first unless
 pre-authorized. **Exit:** a review pass with no critical/major findings (or cap reached +
 surfaced).
@@ -240,7 +243,8 @@ Then hand it back. The handoff template is in
 ## If a phase can't proceed
 
 Honesty beats a clean-looking result. If a gate can't be satisfied (the spec stays
-ambiguous after questions, a loop hits its cap, the build won't go green, an MCP/skill you
-need is absent with no workable fallback), **stop at that phase and report** where you are,
+ambiguous after questions, a review loop plateaus without converging, the build won't go
+green, an MCP/skill you need is absent with no workable fallback), **stop at that phase and
+report** where you are,
 what's blocking, and the options — rather than forcing past it. A pipeline that stops at a
 real obstacle is more useful than one that produces a confidently broken PR.

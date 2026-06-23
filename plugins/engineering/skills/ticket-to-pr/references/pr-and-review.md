@@ -43,7 +43,7 @@ integration expects it:
 
 ```markdown
 ## What & why
-<1–3 sentences: the change and the problem it solves.>
+<briefly: the change and the problem it solves.>
 
 ## Ticket
 <link to the Notion page / GitHub issue (Closes #N) / Linear issue (ABC-123) / "spec: <path>">
@@ -66,15 +66,17 @@ Capture the **PR URL** — Phase 11 needs it.
 - **Run a reviewer.** Prefer the **`code-review`** skill/command on the working diff
   (`/code-review`); for the **already-open GitHub PR**, use **`/review`**. Fall back to
   `/code-review` on the diff if needed. Say which ran.
-- **Fix every finding**, then **re-review until clean** — loop-until-clean, cap 3 (Operating
-  rules). Treat **critical/major** as blocking; minor/nice-to-have go to the handoff notes.
+- **Fix every finding**, then **re-review until clean** — loop-until-clean (Operating rules):
+  keep going until a clean pass, but stop and surface if it plateaus instead of converging.
+  Treat **critical/major** as blocking; minor/nice-to-have go to the handoff notes.
 - **Re-verify after fixes.** Re-run Phase 7's build/test/lint after each fix round so a review
   nit doesn't quietly break the build.
 - **Posting comment replies is outward-facing** — confirm before posting on the PR unless
   pre-authorized. Pushing fix commits to your own PR branch is fine without a fresh prompt once
   the PR exists.
-- If round 3 still has critical/major findings, **stop and surface them** with what you tried —
-  don't merge-ready a PR you know is dirty.
+- If the loop stops converging — a round adds no real improvement, or the same findings keep
+  coming back — **stop and surface what's left** with what you tried; don't merge-ready a PR
+  you know is dirty.
 
 ## Handoff (Phase 11)
 
