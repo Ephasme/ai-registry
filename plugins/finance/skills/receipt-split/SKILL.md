@@ -57,22 +57,45 @@ Not for: generating a payment QR (use `payment-qr`) or reading bank transactions
 
 ## Procedure
 
-### 1. Prepare each photo (decode + orient)
+### 1. Prepare each photo (decode + orient + compress)
 
-Run every input through the prep script — it converts HEIC (default iPhone format) to
-JPG and honours EXIF:
+Run every input through the prep script — it decodes HEIC (default iPhone format), honours
+EXIF, sets orientation, and **downscales + re-encodes** so the image is small *before* it
+ever reaches a subagent:
 ```bash
 python scripts/orient.py <input> --out /tmp/<name>_upright.jpg
 ```
-Phone receipt photos are often shot with the strip lying **sideways**, which wrecks digit
-reading — and aspect-ratio alone can't detect it (a portrait photo can still hold a
-sideways receipt). So treat orientation as something the **model** confirms: if step 2's
-extractor reports the image is rotated/upside-down or its numbers fail the cross-check
-(step 3), re-orient and re-extract:
+
+**Why compress.** A raw phone shot is 12+ MP and several MB; that whole image gets base64'd
+into the OCR subagent's context — expensive — and Claude's vision pipeline downsamples
+anything past ~1568px on the long edge anyway, so the extra pixels cost tokens without
+buying legibility. The script caps the long edge (`--max-dim`, default 1568) and re-encodes
+as JPEG (`--quality`, default 80). The defaults suit a typical thermal receipt; **pick per
+receipt** rather than treating them as fixed:
+- short, large-print ticket → go smaller (`--max-dim 1000 --quality 70`) to save more.
+- dense, small-print receipt → stay near 1568 with `--quality 90` so digits keep their
+  edges; don't exceed 1568 (the model can't see past it). `--max-dim 0` disables downscaling.
+
+The JSON it prints carries final `size` and `bytes` — glance at them to confirm the image
+actually shrank. If step 3's cross-check later fails on *misread digits*, **re-prep
+larger/sharper before** concluding the OCR erred — you may simply have compressed too hard.
+
+**Orientation.** Phone receipts are often shot with the strip lying **sideways**, which
+wrecks digit reading — and aspect-ratio alone can't detect it (a portrait photo can still
+hold a sideways receipt). So treat orientation as something the **model** confirms: if
+step 2's extractor reports the image is rotated/upside-down or its numbers fail the
+cross-check (step 3), re-orient and re-extract:
 ```bash
 python scripts/orient.py <input> --rotate 90    # or 270 / 180 (degrees clockwise)
 python scripts/orient.py <input> --all          # emit r0/r90/r180/r270; let Sonnet pick the legible one
 ```
+
+**Missing tooling.** The script needs Pillow (`pip install Pillow`) or macOS `sips`; for
+HEIC without `sips` it also needs `pillow-heif` (`pip install pillow-heif`). If it exits
+asking for one of these, relay the exact install command to the user and stop — do **not**
+fall back to handing the raw multi-MB image to the subagent, since that's the context
+blow-up this step exists to prevent.
+
 PDFs are read directly. If you can't find any image, ask for the path rather than guessing.
 
 ### 2. Extract each receipt with a Sonnet 4.6 subagent

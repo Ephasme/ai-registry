@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
-"""Prepare a receipt photo for OCR: decode HEIC, honor EXIF, and set orientation.
+"""Prepare a receipt photo for OCR: decode HEIC, honor EXIF, orient, and compress.
 
-Phone receipt photos are frequently rotated 90° (a long thermal strip held sideways),
-which wrecks a vision model's digit reading. This produces an upright JPG.
+Two things wreck a vision model's read of a phone receipt photo:
+
+1. Orientation. Phone photos are frequently rotated 90° (a long thermal strip held
+   sideways), which mangles digit reading. This produces an upright JPG.
+2. Size. A raw phone shot is 12+ megapixels and several MB. That whole image is base64'd
+   into the extraction subagent's context — expensive — and Claude's vision pipeline
+   downsamples anything past ~1568px on the long edge anyway, so the extra pixels buy no
+   legibility, only tokens. So this also downscales (longest edge → --max-dim) and
+   re-encodes as JPEG at --quality. Defaults are tuned for thermal receipts; the caller
+   can override per receipt (see below).
 
 Usage:
-    python orient.py <input> [--out PATH] [--rotate auto|cw|ccw|0|90|180|270] [--all] [--outdir DIR]
+    python orient.py <input> [--out PATH] [--rotate auto|cw|ccw|0|90|180|270] [--all]
+                     [--outdir DIR] [--max-dim N] [--quality Q]
 
     <input>          .heic/.heif/.jpg/.jpeg/.png (HEIC is converted automatically)
     --rotate auto    (default) if the image is landscape (wider than tall), rotate it 90°
@@ -16,9 +25,20 @@ Usage:
     --rotate N       apply an explicit clockwise rotation (cw=90, ccw=270).
     --all            write all four rotations (…_r0/_r90/_r180/_r270.jpg) and list them,
                      so the extractor can pick the legible orientation itself.
+    --max-dim N      cap the longest edge at N pixels (default 1568, Claude's vision
+                     long-edge limit — going higher only adds bytes, not detail the model
+                     can see). Drop it lower (e.g. 1200) for a short, large-print ticket to
+                     save more; 0 disables downscaling. If a dense, small-print receipt
+                     fails its cross-check on misread digits, re-prep nearer 1568 (and bump
+                     --quality) before blaming the OCR.
+    --quality Q      JPEG quality 1–100 (default 80). Thermal print is high-contrast
+                     black-on-white, so 80 stays legible while shrinking the file a lot;
+                     raise toward 90 only if fine print smears.
 
 Degrees are CLOCKWISE. Prints a JSON line: input, output(s), rotation_applied, size,
-orientation. On success the prepared image is what you feed to the extraction subagent.
+orientation, and bytes (final file size) so you can confirm the compression took. If
+neither Pillow nor macOS sips is available, it exits with the exact install command rather
+than producing a giant uncompressed image — relay that to the user.
 """
 import json
 import os
@@ -28,6 +48,8 @@ import sys
 import tempfile
 
 ROT = {"0": 0, "90": 90, "180": 180, "270": 270, "cw": 90, "ccw": 270, "auto": "auto"}
+MAX_DIM_DEFAULT = 1568  # Claude downsamples the long edge to this; larger is wasted bytes
+QUALITY_DEFAULT = 80
 
 
 def _load_pillow():
@@ -50,17 +72,22 @@ def _heic_to_jpg_sips(src):
     return tmp
 
 
-def _save_rotation_sips(src, degrees, out):
+def _save_rotation_sips(src, degrees, out, max_dim, quality):
     shutil.copyfile(src, out)
+    cmd = ["sips"]
     if degrees:
-        subprocess.run(["sips", "-r", str(degrees), out], check=True, capture_output=True)
+        cmd += ["-r", str(degrees)]
+    if max_dim:
+        cmd += ["-Z", str(max_dim)]  # resample so the LONGEST edge is at most max_dim
+    cmd += ["-s", "format", "jpeg", "-s", "formatOptions", str(quality), out]
+    subprocess.run(cmd, check=True, capture_output=True)
     return out
 
 
 def main():
     args = sys.argv[1:]
     if not args:
-        sys.exit("usage: python orient.py <input> [--out PATH] [--rotate auto|cw|ccw|0|90|180|270] [--all] [--outdir DIR]")
+        sys.exit("usage: python orient.py <input> [--out PATH] [--rotate auto|cw|ccw|0|90|180|270] [--all] [--outdir DIR] [--max-dim N] [--quality Q]")
     src = args[0]
     if not os.path.isfile(src):
         sys.exit(f"no such file: {src}")
@@ -69,6 +96,8 @@ def main():
     outdir = None
     rotate = "auto"
     emit_all = False
+    max_dim = MAX_DIM_DEFAULT
+    quality = QUALITY_DEFAULT
     i = 1
     while i < len(args):
         a = args[i]
@@ -82,6 +111,22 @@ def main():
                 sys.exit(f"--rotate must be one of {', '.join(ROT)}")
         elif a == "--all":
             emit_all = True
+        elif a == "--max-dim":
+            i += 1
+            try:
+                max_dim = int(args[i])
+            except ValueError:
+                sys.exit("--max-dim must be an integer (pixels), 0 to disable")
+            if max_dim < 0:
+                sys.exit("--max-dim must be >= 0")
+        elif a == "--quality":
+            i += 1
+            try:
+                quality = int(args[i])
+            except ValueError:
+                sys.exit("--quality must be an integer 1-100")
+            if not 1 <= quality <= 100:
+                sys.exit("--quality must be between 1 and 100")
         else:
             sys.exit(f"unexpected argument: {a}")
         i += 1
@@ -114,15 +159,20 @@ def main():
             sys.exit(f"could not open image: {e}")
 
         def save(im, path):
-            im.save(path, "JPEG", quality=92)
+            # thumbnail caps the LONGEST edge at max_dim, preserves aspect, in place
+            if max_dim and max(im.size) > max_dim:
+                im.thumbnail((max_dim, max_dim), Image.LANCZOS)
+            im.save(path, "JPEG", quality=quality, optimize=True)
+            return im
 
         if emit_all:
             outs = {}
             for deg in (0, 90, 180, 270):
                 p = os.path.join(outdir, f"{base}_r{deg}.jpg")
-                save(img.rotate(-deg, expand=True), p)  # PIL rotate is CCW; negative = CW
-                outs[deg] = p
-            print(json.dumps({"input": src, "outputs": outs, "size": list(img.size)}))
+                saved = save(img.rotate(-deg, expand=True), p)  # PIL rotate is CCW; negative = CW
+                outs[deg] = {"path": p, "size": list(saved.size), "bytes": os.path.getsize(p)}
+            print(json.dumps({"input": src, "outputs": outs,
+                              "max_dim": max_dim, "quality": quality}))
             return
 
         if rotate == "auto":
@@ -132,10 +182,12 @@ def main():
             degrees = ROT[rotate]
         result = img.rotate(-degrees, expand=True) if degrees else img
         out = out or os.path.join(outdir, f"{base}_upright.jpg")
-        save(result, out)
+        result = save(result, out)
         print(json.dumps({"input": src, "output": out, "rotation_applied": degrees,
                           "size": list(result.size),
-                          "orientation": "portrait" if result.size[1] >= result.size[0] else "landscape"}))
+                          "orientation": "portrait" if result.size[1] >= result.size[0] else "landscape",
+                          "max_dim": max_dim, "quality": quality,
+                          "bytes": os.path.getsize(out)}))
         return
 
     # ---- sips-only fallback (macOS, no Python imaging libs)
@@ -147,9 +199,10 @@ def main():
         outs = {}
         for deg in (0, 90, 180, 270):
             p = os.path.join(outdir, f"{base}_r{deg}.jpg")
-            _save_rotation_sips(work, deg, p)
-            outs[deg] = p
-        print(json.dumps({"input": src, "outputs": outs}))
+            _save_rotation_sips(work, deg, p, max_dim, quality)
+            outs[deg] = {"path": p, "bytes": os.path.getsize(p)}
+        print(json.dumps({"input": src, "outputs": outs,
+                          "max_dim": max_dim, "quality": quality}))
         return
 
     if rotate == "auto":
@@ -161,8 +214,10 @@ def main():
     else:
         degrees = ROT[rotate]
     out = out or os.path.join(outdir, f"{base}_upright.jpg")
-    _save_rotation_sips(work, degrees, out)
-    print(json.dumps({"input": src, "output": out, "rotation_applied": degrees}))
+    _save_rotation_sips(work, degrees, out, max_dim, quality)
+    print(json.dumps({"input": src, "output": out, "rotation_applied": degrees,
+                      "max_dim": max_dim, "quality": quality,
+                      "bytes": os.path.getsize(out)}))
 
 
 if __name__ == "__main__":
