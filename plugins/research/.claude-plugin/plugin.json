@@ -1,6 +1,6 @@
 {
   "name": "research",
-  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), fetch pages that block ordinary scraping (403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) through BrightData's Web Unlocker (web-unlocker), automate a real headless Chromium browser (Playwright) for JS-heavy or interactive pages, and run BrightData's full scraping toolkit — web search, structured web-data feeds, and a scraping browser — through the Bright Data MCP (brightdata). Supply an Exa API key to enable web search; supply Cloudflare Access credentials to enable Playwright; supply a BrightData API token to enable the Bright Data MCP.",
+  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), automate a real headless Chromium browser (Playwright) for JS-heavy or interactive pages, and run BrightData's full scraping toolkit — web search, structured web-data feeds, a scraping browser, and the Web Unlocker (for pages that block ordinary scraping: 403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) — through the Bright Data MCP (brightdata). Supply an Exa API key to enable web search; supply Cloudflare Access credentials to enable Playwright and the Bright Data MCP.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "EXA_API_KEY": {
@@ -20,10 +20,15 @@
       "description": "CF-Access-Client-Secret for playwright.loup-peluso.com. Stored in your system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
       "sensitive": true
     },
-    "BRIGHTDATA_API_KEY": {
+    "BRIGHTDATA_CF_ACCESS_CLIENT_ID": {
       "type": "string",
-      "title": "Bright Data API Token",
-      "description": "BrightData API token (https://brightdata.com/cp/setting), passed as the API_TOKEN env var to the @brightdata/mcp server and shared with the web-unlocker skill. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/brightdata.sops.json.",
+      "title": "Bright Data — CF Access Client ID",
+      "description": "CF-Access-Client-Id for brightdata.loup-peluso.com (per-MCP service token; public identifier, ends in .access)."
+    },
+    "BRIGHTDATA_CF_ACCESS_CLIENT_SECRET": {
+      "type": "string",
+      "title": "Bright Data — CF Access Client Secret",
+      "description": "CF-Access-Client-Secret for brightdata.loup-peluso.com. Stored in your system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
       "sensitive": true
     }
   }

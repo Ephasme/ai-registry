@@ -16,11 +16,11 @@
       }
     },
     "brightdata": {
-      "command": "npx",
-      "args": ["@brightdata/mcp"],
-      "env": {
-        "API_TOKEN": "${user_config.BRIGHTDATA_API_KEY}",
-        "GROUPS": "advanced_scraping,ecommerce,browser,research,travel"
+      "type": "http",
+      "url": "https://brightdata.loup-peluso.com/mcp",
+      "headers": {
+        "CF-Access-Client-Id": "${user_config.BRIGHTDATA_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.BRIGHTDATA_CF_ACCESS_CLIENT_SECRET}"
       }
     }
   }
