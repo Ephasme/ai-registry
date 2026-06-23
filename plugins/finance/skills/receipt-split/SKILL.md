@@ -1,9 +1,9 @@
 ---
-name: receipt-splitwise
+name: receipt-split
 description: Extract expense data from one or more French receipt photos and post each to Splitwise, split 50/50 between Loup (you) and Cassandra. Use whenever receipt or ticket photos are shared — a single photo, several, or a folder — and the user wants them on Splitwise (phrasings like add this receipt to Splitwise, split these tickets with Cassandra, ajoute ces reçus sur Splitwise, note this purchase to share), or asks to expense or split a bill — even if they don't say Splitwise out loud. Who paid is read from the CB card last-4 or the loyalty/fidélité account printed on the receipt (you keep a local identity registry); it asks when neither resolves, and always shows a summary you approve before creating anything.
 ---
 
-# receipt-splitwise — French receipts → Splitwise, split 50/50
+# receipt-split — French receipts → Splitwise, split 50/50
 
 Turn one or many receipt photos into Splitwise expenses, each split 50/50 between
 **Loup** (the current Splitwise user) and **Cassandra**. Receipts are **always French**
@@ -36,7 +36,7 @@ Not for: generating a payment QR (use `payment-qr`) or reading bank transactions
   repo** and is never committed. Resolution order:
   1. `$RECEIPT_CARDS_REGISTRY`, else
   2. `$CLAUDE_CONFIG_DIR/receipt-cards.json` (e.g. `~/.claude-perso/receipt-cards.json`), else
-  3. `~/.config/receipt-splitwise/cards.json`.
+  3. `~/.config/receipt-split/cards.json`.
 
   Format:
   ```json
