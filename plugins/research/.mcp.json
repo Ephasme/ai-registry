@@ -14,6 +14,14 @@
         "CF-Access-Client-Id": "${user_config.PLAYWRIGHT_CF_ACCESS_CLIENT_ID}",
         "CF-Access-Client-Secret": "${user_config.PLAYWRIGHT_CF_ACCESS_CLIENT_SECRET}"
       }
+    },
+    "brightdata": {
+      "command": "npx",
+      "args": ["@brightdata/mcp"],
+      "env": {
+        "API_TOKEN": "${user_config.BRIGHTDATA_API_KEY}",
+        "GROUPS": "advanced_scraping,ecommerce,browser,research,travel"
+      }
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "research",
-  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), fetch pages that block ordinary scraping (403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) through BrightData's Web Unlocker (web-unlocker), and automate a real headless Chromium browser (Playwright) for JS-heavy or interactive pages. Supply an Exa API key to enable web search; supply Cloudflare Access credentials to enable Playwright.",
+  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), fetch pages that block ordinary scraping (403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) through BrightData's Web Unlocker (web-unlocker), automate a real headless Chromium browser (Playwright) for JS-heavy or interactive pages, and run BrightData's full scraping toolkit — web search, structured web-data feeds, and a scraping browser — through the Bright Data MCP (brightdata). Supply an Exa API key to enable web search; supply Cloudflare Access credentials to enable Playwright; supply a BrightData API token to enable the Bright Data MCP.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "EXA_API_KEY": {
@@ -18,6 +18,12 @@
       "type": "string",
       "title": "Playwright — CF Access Client Secret",
       "description": "CF-Access-Client-Secret for playwright.loup-peluso.com. Stored in your system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
+      "sensitive": true
+    },
+    "BRIGHTDATA_API_KEY": {
+      "type": "string",
+      "title": "Bright Data API Token",
+      "description": "BrightData API token (https://brightdata.com/cp/setting), passed as the API_TOKEN env var to the @brightdata/mcp server and shared with the web-unlocker skill. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/brightdata.sops.json.",
       "sensitive": true
     }
   }
