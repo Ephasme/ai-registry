@@ -12,7 +12,7 @@ bundles the fact-checking skills together with Exa web search).
 
 | Plugin | Purpose | What's inside |
 |---|---|---|
-| **engineering** | Build & ship software | skills: `writing-technical-specs`, `plan-hardening`, `spec-handoff-review`, `code-quality-scan`, `document-codebase`, `prune-branches` · MCP: GitHub |
+| **engineering** | Build & ship software | skills: `writing-technical-specs`, `plan-hardening`, `spec-handoff-review`, `code-quality-scan`, `document-codebase`, `update-documentation`, `prune-branches` · MCP: GitHub |
 | **research** | Find & verify information | skills: `cite-or-refuse`, `fact-check-document` · MCP: Exa web search |
 | **communication** | Reach people | MCP: Slack, WhatsApp (wacli) |
 | **workspace** | Email, calendar, files | MCP: Google Workspace ×3 (perso / work / cassandra) |

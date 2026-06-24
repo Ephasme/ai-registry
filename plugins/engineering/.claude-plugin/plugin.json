@@ -1,6 +1,6 @@
 {
   "name": "engineering",
-  "description": "Build and ship software — author and harden technical specs (writing-technical-specs, plan-hardening, spec-handoff-review), scan code for structural quality (code-quality-scan), generate code-verified documentation (document-codebase), strip docs down to their current state with a verbatim changelog (greenfield), and keep the repository tidy (prune-branches). Talk to GitHub (issues, PRs, repos, Actions) through the official remote MCP server; supply a GitHub personal access token to enable. Talk to Linear (issues, projects, cycles) through its official remote MCP server; supply a Linear personal API key to enable.",
+  "description": "Build and ship software — author and harden technical specs (writing-technical-specs, plan-hardening, spec-handoff-review), scan code for structural quality (code-quality-scan), generate code-verified documentation (document-codebase), keep that documentation in sync with code changes incrementally over a working-tree change, commit, range, or PR (update-documentation), strip docs down to their current state with a verbatim changelog (greenfield), and keep the repository tidy (prune-branches). Talk to GitHub (issues, PRs, repos, Actions) through the official remote MCP server; supply a GitHub personal access token to enable. Talk to Linear (issues, projects, cycles) through its official remote MCP server; supply a Linear personal API key to enable.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "GITHUB_PAT": {
