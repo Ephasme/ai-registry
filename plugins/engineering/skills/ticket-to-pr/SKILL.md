@@ -10,7 +10,6 @@ description: >-
   "take this ticket to a PR", "implement NID-123 end to end", "ship this issue",
   "do this spec and open a PR", or "drive this from spec to merge". It commits,
   pushes, and opens PRs, so it is explicit-invocation only and never auto-triggers.
-disable-model-invocation: true
 ---
 
 # ticket-to-pr — from specification to a reviewed PR
