@@ -14,6 +14,7 @@
     { "name": "navigation",    "source": "./plugins/navigation" },
     { "name": "finance",       "source": "./plugins/finance" },
     { "name": "automation",    "source": "./plugins/automation" },
-    { "name": "claude-tools",  "source": "./plugins/claude-tools" }
+    { "name": "claude-tools",  "source": "./plugins/claude-tools" },
+    { "name": "setup",         "source": "./plugins/setup" }
   ]
 }
