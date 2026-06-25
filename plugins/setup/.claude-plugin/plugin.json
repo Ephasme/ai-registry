@@ -1,0 +1,5 @@
+{
+  "name": "setup",
+  "description": "Configure developer machines and tooling — set up per-directory git identity profiles with SSH commit signing, separate keys for work vs personal GitHub accounts, and gitconfig includeIf isolation (git-multi-identity-setup).",
+  "author": { "name": "Loup Peluso" }
+}
