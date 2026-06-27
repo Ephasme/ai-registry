@@ -1,5 +1,5 @@
 {
   "name": "setup",
-  "description": "Configure developer machines and tooling — set up per-directory git identity profiles with SSH commit signing, separate keys for work vs personal GitHub accounts, and gitconfig includeIf isolation (git-multi-identity-setup).",
+  "description": "Set up and maintain developer machines — per-directory git identity profiles with SSH commit signing, separate keys for work vs personal GitHub accounts, and gitconfig includeIf isolation (git-multi-identity-setup); and aggressive-but-safe disk space reclamation when a machine is low on space, distinguishing regenerable caches from personal data (free-disk-space).",
   "author": { "name": "Loup Peluso" }
 }
