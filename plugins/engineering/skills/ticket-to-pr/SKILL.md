@@ -9,7 +9,8 @@ description: >-
   issue, or a raw written spec (pasted or a file path), and says something like
   "take this ticket to a PR", "implement NID-123 end to end", "ship this issue",
   "do this spec and open a PR", or "drive this from spec to merge". It commits,
-  pushes, and opens PRs, so it is explicit-invocation only and never auto-triggers.
+  pushes, and opens PRs — outward-facing steps it pauses to confirm before taking
+  unless you pre-authorize hands-off completion.
 ---
 
 # ticket-to-pr — from specification to a reviewed PR
@@ -43,9 +44,39 @@ happen on a guess.
 11 HANDOFF          → summary, PR link, leftovers → back to the human
 ```
 
+## Before you begin — the phase ledger (mandatory)
+
+This pipeline only works if every phase actually runs, in order, with its gate honoured. To
+make that auditable instead of best-effort, **do these two things — they are not optional:**
+
+1. **Open the ledger first.** Before Phase 0, call **TodoWrite** with all twelve phases
+   (0–11) as separate items, in order. This is the first action the skill takes — before
+   reading the ticket, before any tool call. The ledger stays in front of you for the whole
+   run so a phase can't quietly fall off.
+
+2. **Advance one phase at a time, and only on a receipt.** Exactly one phase is
+   `in_progress` at any moment. You may mark a phase `completed` **only after** you have
+   printed its **exit receipt** (see the operating rule below) — the receipt *is* the
+   completion criterion. Then move the next phase to `in_progress`. Do not batch-complete,
+   do not skip ahead, and do not mark a phase done because it "probably would have passed".
+
+The only sanctioned deviations from strict 0→11 order are the ones the phases themselves
+document: **Phase 5** may be skipped (say so, with the receipt noting *why*), and a failed
+gate in **Phase 7** or **Phase 10** sends you **back** to an earlier phase (re-open that
+todo, don't leave it falsely complete). Any other skip is a bug in your execution, not a
+shortcut.
+
 ## Operating rules (apply to every phase)
 
-These four behaviours recur throughout; internalize them once so each phase stays short.
+These five behaviours recur throughout; internalize them once so each phase stays short.
+
+- **Print an exit receipt before advancing.** Every phase ends with one line of the form
+  `✅ Phase N (<NAME>) — <which path ran> — <evidence>`, e.g.
+  `✅ Phase 7 (VERIFY) — ran pnpm test+lint+build — 142 passed, 0 failed (output above)`, or
+  `✅ Phase 5 (DEEP REVIEW) — skipped: phases 3–4 surfaced no serious findings`. The receipt
+  names the branch you took (skill vs fallback, run vs skip) and points at the concrete
+  evidence that the phase's stated **Exit** condition is met. No receipt → the phase isn't
+  done → you may not move on. This is what makes a skipped step impossible to hide.
 
 - **Loop-until-clean — converge, don't count.** Whenever a phase says "fix all issues", it
   means: fix every **critical/major** finding, then re-run the reviewer; repeat until a clean
