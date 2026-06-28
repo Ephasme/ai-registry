@@ -9,7 +9,8 @@ description: >-
   issue, or a raw written spec (pasted or a file path), and says something like
   "take this ticket to a PR", "implement NID-123 end to end", "ship this issue",
   "do this spec and open a PR", or "drive this from spec to merge". It commits,
-  pushes, and opens PRs, so it is explicit-invocation only and never auto-triggers.
+  pushes, and opens PRs — outward-facing steps it pauses to confirm before taking
+  unless you pre-authorize hands-off completion.
 ---
 
 # ticket-to-pr — from specification to a reviewed PR
