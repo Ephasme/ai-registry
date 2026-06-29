@@ -1,0 +1,24 @@
+{
+  "name": "security",
+  "description": "Manage secrets and credentials — read, search, create, edit, and generate Bitwarden vault items (logins, notes, cards, identities) through the official Bitwarden MCP server (@bitwarden/mcp-server, stdio via the bw CLI). Vault access needs a BW_SESSION token from `bw unlock --raw`; add organization API credentials (BW_CLIENT_ID / BW_CLIENT_SECRET) to enable org-admin tools. Requires the Bitwarden CLI (`bw`) installed and logged in on the machine.",
+  "author": { "name": "Loup Peluso" },
+  "userConfig": {
+    "BW_SESSION": {
+      "type": "string",
+      "title": "Bitwarden session token",
+      "description": "Session token for vault access, obtained by running `bw login` then `bw unlock --raw` with the Bitwarden CLI. Note: this token is invalidated on lock/logout and must be refreshed when it expires. Stored in your system keychain, never written to the repo.",
+      "sensitive": true
+    },
+    "BW_CLIENT_ID": {
+      "type": "string",
+      "title": "Organization API client ID",
+      "description": "Organization API key client ID (Web Vault → Organization → Settings → API Key), e.g. organization.xxxx. Optional — enables organization admin tools. Leave blank for personal-vault-only mode."
+    },
+    "BW_CLIENT_SECRET": {
+      "type": "string",
+      "title": "Organization API client secret",
+      "description": "Organization API key client secret paired with BW_CLIENT_ID. Optional — enables organization admin tools. Stored in your system keychain, never written to the repo. Leave blank for personal-vault-only mode.",
+      "sensitive": true
+    }
+  }
+}
