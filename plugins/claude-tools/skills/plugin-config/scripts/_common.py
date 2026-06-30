@@ -75,50 +75,122 @@ def load_json(path: Path) -> Optional[dict]:
         return None
 
 
+def _installed_plugin_paths(
+    config_dir: Path, plugin_name: str, marketplace: Optional[str]
+):
+    """Yield (marketplace_name, install_path) recorded in installed_plugins.json.
+
+    This is the source of truth for what is *actually installed*, and it works for
+    every marketplace source type -- git, directory, or local -- because the path
+    points straight at the unpacked plugin in the cache rather than re-deriving it
+    from a (possibly absent) marketplaces/<name> mirror.
+    """
+    data = load_json(config_dir / "plugins" / "installed_plugins.json")
+    plugins = data.get("plugins") if isinstance(data, dict) else None
+    if not isinstance(plugins, dict):
+        return
+    for full_id, entries in plugins.items():
+        name, market = parse_plugin_id(full_id)
+        if name != plugin_name:
+            continue
+        if marketplace and market != marketplace:
+            continue
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if isinstance(entry, dict) and entry.get("installPath"):
+                yield market, Path(entry["installPath"]).expanduser()
+
+
+def _manifest_from_marketplace_root(
+    root: Path, plugin_name: str, marketplace_name: Optional[str]
+) -> Optional[Path]:
+    """Resolve plugin.json under a marketplace root (dir holding marketplace.json).
+
+    Honors the marketplace.json `source` for the plugin (so a source dir differing
+    from the plugin name still resolves), then falls back to the conventional
+    plugins/<name> layout. Returns the manifest Path or None.
+    """
+    market_json = load_json(root / ".claude-plugin" / "marketplace.json")
+    source_rel = None
+    if market_json:
+        for entry in market_json.get("plugins", []):
+            if isinstance(entry, dict) and entry.get("name") == plugin_name:
+                src = entry.get("source")
+                if isinstance(src, str):
+                    source_rel = src
+                break
+    manifest = None
+    if source_rel:
+        manifest = (root / source_rel / ".claude-plugin" / "plugin.json").resolve()
+    if manifest is None or not manifest.is_file():
+        fallback = root / "plugins" / plugin_name / ".claude-plugin" / "plugin.json"
+        manifest = fallback if fallback.is_file() else manifest
+    return manifest if (manifest and manifest.is_file()) else None
+
+
+def _marketplace_roots(
+    config_dir: Path, marketplace: Optional[str]
+) -> List[Tuple[str, Path]]:
+    """Candidate (marketplace_name, root_dir) pairs to search for a plugin manifest.
+
+    Covers directory/local-source marketplaces -- whose root lives wherever the
+    user cloned it, recorded in known_marketplaces.json and NOT mirrored under
+    plugins/marketplaces/ -- as well as the cached git marketplaces that are.
+    """
+    roots: List[Tuple[str, Path]] = []
+    known = load_json(config_dir / "plugins" / "known_marketplaces.json")
+    if isinstance(known, dict):
+        for name, meta in known.items():
+            if marketplace and name != marketplace:
+                continue
+            if not isinstance(meta, dict):
+                continue
+            loc = meta.get("installLocation")
+            if not loc and isinstance(meta.get("source"), dict):
+                loc = meta["source"].get("path")
+            if isinstance(loc, str) and loc:
+                roots.append((name, Path(loc).expanduser()))
+    mdir = _marketplaces_dir(config_dir)
+    if mdir.is_dir():
+        cands = [mdir / marketplace] if marketplace else sorted(
+            p for p in mdir.iterdir() if p.is_dir()
+        )
+        for cand in cands:
+            if cand.is_dir():
+                roots.append((cand.name, cand))
+    return roots
+
+
 def resolve_manifest(
     config_dir: Path, plugin_name: str, marketplace: Optional[str]
 ) -> Tuple[Optional[str], Optional[Path]]:
     """Locate the installed plugin.json for a plugin in a config dir.
 
     Returns (marketplace_name, manifest_path). Either may be None when the
-    plugin/marketplace can't be found. The marketplace's own marketplace.json is
-    consulted so a plugin whose source dir differs from its name still resolves;
-    we fall back to plugins/<name> when that lookup fails.
+    plugin/marketplace can't be found.
+
+    Resolution order:
+      1. installed_plugins.json -> installPath/.claude-plugin/plugin.json. Most
+         reliable: it pins the *installed* manifest (whose `sensitive` flags
+         actually govern storage) and is source-type agnostic.
+      2. A marketplace root -- including directory/local-source marketplaces taken
+         from known_marketplaces.json, not only the cached git mirrors under
+         plugins/marketplaces/. The marketplace.json `source` is honored with a
+         plugins/<name> fallback.
     """
-    mdir = _marketplaces_dir(config_dir)
-    if not mdir.is_dir():
-        return marketplace, None
+    for market, install_path in _installed_plugin_paths(
+        config_dir, plugin_name, marketplace
+    ):
+        manifest = install_path / ".claude-plugin" / "plugin.json"
+        if manifest.is_file():
+            return market or marketplace, manifest
 
-    if marketplace:
-        candidates = [mdir / marketplace]
-    else:
-        candidates = sorted(p for p in mdir.iterdir() if p.is_dir())
+    for market_name, root in _marketplace_roots(config_dir, marketplace):
+        manifest = _manifest_from_marketplace_root(root, plugin_name, market_name)
+        if manifest:
+            return market_name, manifest
 
-    for cand in candidates:
-        if not cand.is_dir():
-            continue
-        market_json = load_json(cand / ".claude-plugin" / "marketplace.json")
-        source_rel = None
-        if market_json:
-            for entry in market_json.get("plugins", []):
-                if isinstance(entry, dict) and entry.get("name") == plugin_name:
-                    src = entry.get("source")
-                    if isinstance(src, str):
-                        source_rel = src
-                    break
-            else:
-                # plugin not listed in this marketplace; keep looking
-                if marketplace is None:
-                    continue
-        manifest = None
-        if source_rel:
-            manifest = (cand / source_rel / ".claude-plugin" / "plugin.json").resolve()
-        if manifest is None or not manifest.is_file():
-            # fallback: conventional plugins/<name> layout
-            fallback = cand / "plugins" / plugin_name / ".claude-plugin" / "plugin.json"
-            manifest = fallback if fallback.is_file() else manifest
-        if manifest and manifest.is_file():
-            return cand.name, manifest
     return marketplace, None
 
 
