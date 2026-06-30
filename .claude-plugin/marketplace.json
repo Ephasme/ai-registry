@@ -16,6 +16,7 @@
     { "name": "automation",    "source": "./plugins/automation" },
     { "name": "claude-tools",  "source": "./plugins/claude-tools" },
     { "name": "setup",         "source": "./plugins/setup" },
-    { "name": "security",      "source": "./plugins/security" }
+    { "name": "security",      "source": "./plugins/security" },
+    { "name": "ops",           "source": "./plugins/ops" }
   ]
 }

@@ -1,0 +1,5 @@
+{
+  "name": "ops",
+  "description": "Operational runbooks executed as skills — recurring back-office and production-data chores driven from a request rather than a codebase. Run Edouard's month-end \"passer les trials en canceled\" cleanup against the Sherpas production DB: extract a list of chatroom IDs (from Slack, a Google Sheet, or a CSV), run a read-only assessment, then flip never-held trial courses to 'canceled' behind the mandatory db-super-admin-access snapshot + CONFIRM WRITE workflow (cancel-trial-courses).",
+  "author": { "name": "Loup Peluso" }
+}
