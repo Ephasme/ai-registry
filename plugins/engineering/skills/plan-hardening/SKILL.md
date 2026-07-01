@@ -7,6 +7,11 @@ description: Iteratively review and harden an engineering plan by verifying clai
 
 Run the plan through rounds of review and fixes until it holds up to reality. Each round verifies claims, surfaces findings, gathers any needed clarifications, applies fixes, and re-reviews — and stops when a round produces no fixes.
 
+## Guardrails
+
+- **Stay read-only.** This skill checks a plan against reality, it doesn't build anything. Verification means reading files, grepping the codebase, and consulting documentation — never writing, running, or executing code, scripts, builds, or tests, and never spinning up an environment to observe behavior. Read-only tools are also just faster and safer for this job: a claim you can settle by reading a file in seconds shouldn't turn into a script you write, debug, and run. If confirming a claim would take more than a quick read-only lookup, that's a sign it's beyond this skill's reach — flag it as unverified and route it to Step 2 as a question rather than chasing empirical proof yourself.
+- **The plan stays a plan.** The deliverable is the plan's own text, not a working implementation of it. Fixes are edits to the plan's prose and steps. A short pseudo-code snippet is fine when it's the clearest way to pin down an algorithm, data shape, or tricky sequencing — keep it illustrative (a few lines, non-runnable, no imports/boilerplate/error handling), not a working implementation. Never write actual runnable code, diffs against the target codebase, or verification scripts — if a finding needs more than a few illustrative lines to convey, write a precise plan instruction instead (file, function, expected behavior) so an implementer can act on it later. A hardened plan should read the same way it did before, only more accurate and complete — not accreted with real code blocks, diffs, or scripts.
+
 ## Preparing step — Locate the plan
 
 Before doing anything else, identify what plan is being hardened. Look in the current conversation and any uploaded files for a plan, design doc, refactor proposal, RFC, ADR, or migration document. If multiple candidates exist, ask the user which one (or which sections) to harden. If nothing is present, ask the user to share or paste the plan.
@@ -20,8 +25,8 @@ Walk the plan and surface findings of two kinds: claims that don't hold up again
 **Verify every claim.** A "claim" is anything assertable: file paths, function names, API behaviors, data shapes, sequencing assumptions, performance numbers, library capabilities, configuration values, current-state descriptions ("X currently does Y"), or causal reasoning ("changing A will fix B"). For each, do exactly one of:
 - **Read the related code** — open files, trace call sites, inspect schemas — when the claim is about the codebase.
 - **Consult official documentation** — fetch the docs page, API reference, or changelog — when the claim is about a third-party library, framework, or platform. Prefer primary sources over blog posts.
-- **Run a tool** — search, query, computation — when the claim is empirically testable with what's available.
-- **Flag it as an unverified finding for Step 2 to ask about** if you can't verify it with available tools.
+- **Run a read-only query** — grep/search, a check-only linter or type-checker, a read-only DB or API query — when the claim is testable that way without writing or executing new code.
+- **Flag it as an unverified finding for Step 2 to ask about** if you can't verify it with a read-only lookup, or if doing so would require writing/running code, a build, a test suite, or standing up an environment.
 
 Capture the source of each verification (file:line, doc URL, search result) as you go so it can be cited in the output. Do not accept a claim because it sounds plausible — plausible-sounding wrong claims are exactly what this loop exists to catch. If you have no verification tools at all, every empirical claim falls into the last bullet and goes to the user.
 
@@ -53,7 +58,7 @@ If the user pushes back on a finding, re-verify against the source rather than d
 
 ## Step 3 — Fix critical and major findings
 
-Apply fixes for every critical and major finding from Step 2, incorporating the user's clarifications where given. Do not silently make design decisions that should have been triaged as questions in Step 2.
+Apply fixes for every critical and major finding from Step 2, incorporating the user's clarifications where given. Fixes are edits to the plan document itself — not code changes to the target codebase, and not scripts written to prove the fix works (see Guardrails). Do not silently make design decisions that should have been triaged as questions in Step 2.
 
 Leave minor findings as-is — they get noted in the final summary, not fixed in the plan.
 

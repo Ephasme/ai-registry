@@ -14,6 +14,11 @@ This skill is deliberately different from iterative `plan-hardening`:
 
 Both can exist in the same workflow: run `plan-hardening` to convergence, then run `final-plan-hardening` as the closing pass before handoff.
 
+## Guardrails
+
+- **Read-only.** This pass reasons about the spec's text — cross-referencing sections, checking terms against each other, comparing against documentation or established principles when a lens calls for it. It does not run tools, execute code, or perform empirical verification against a live system; that's `plan-hardening`'s job, and it's assumed done by the time this pass starts. If a claim surfaces here that actually needs empirical checking, note it as a finding pointing back to a plan-hardening round rather than trying to verify it yourself.
+- **The spec stays a spec.** Every fix is a textual edit to the spec — a sentence, a section, a definition, a table — or a specific open question for the user. A short pseudo-code snippet is fine when it's the clearest way to pin down an algorithm or a tricky sequencing rule — keep it illustrative (a few lines, non-runnable), not a working implementation. Never insert actual runnable code, diffs, or scripts into the document. The interface signatures used under the Interface/contract lens are a related tool: a one-line `(inputs) -> (outputs) {pre, post}` shape is a specification device, not code.
+
 ## The plan you're reviewing
 
 Find the actual plan before doing anything else — current conversation, uploaded files, attached docs. If multiple candidates exist, ask the user which one (or which sections) to harden. Do not summarize or reconstruct it from memory; work from the literal text. If nothing is present, ask the user to paste or share it.
@@ -179,5 +184,6 @@ Produce the report in this order:
 - Every finding needs evidence — code, cited spec section, or official documentation / established principle.
 - Empty lens results are valid and welcome.
 - Don't pad. Don't raise preference-based findings.
-- Each fix is either a concrete edit or a specific question the spec must answer.
+- Each fix is either a concrete textual edit to the spec (small illustrative pseudo-code is fine) or a specific question it must answer — never actual runnable code, diffs, or scripts inserted into the document.
 - Distinguish hard constraints from open proposals if the spec uses that convention.
+- Stay read-only: this is a text-level review, not empirical verification (that's `plan-hardening`'s job).
