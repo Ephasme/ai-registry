@@ -1,0 +1,21 @@
+plugins/security/skills/1password-passkey-audit/SKILL.md
+  s_9227d7d1c5d45b::t_d2e781c0cf4a33 1-188
+plugins/security/skills/1password-passkey-audit/scripts/passkey_audit.py
+  s_9227d7d1c5d45b::t_55956a64d9e654 1-452
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "83cef301bdd7f44eb78e8f63108b16257bb73116",
+  "prompts": {},
+  "sessions": {
+    "s_9227d7d1c5d45b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_9227d7d1c5d45b",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
