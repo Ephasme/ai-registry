@@ -1,0 +1,21 @@
+plugins/claude-tools/.claude-plugin/plugin.json
+  s_4de9932c185028::t_5de61122c76ee2 3
+plugins/claude-tools/skills/handoff/SKILL.md
+  s_4de9932c185028::t_76fe0ed0dff3d5 1-20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8fe127a14a08dbd33134011be2b34a09a79131c9",
+  "prompts": {},
+  "sessions": {
+    "s_4de9932c185028": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_4de9932c185028",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
