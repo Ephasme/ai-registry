@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Write a handoff document summarising the current conversation so a fresh agent can continue the work.
 
-By default, output the document directly in the chat response — it's meant to be read or copied right away, not hunted for on disk. Pass `--file` to instead save it to a file in the current directory (not a temp dir — the next session is expected to pick it up from this workspace), named meaningfully with today's date, e.g. `handoff-<topic>-YYYY-MM-DD.md`.
+By default, output the document directly in the chat response — it's meant to be read or copied right away, not hunted for on disk. Pass `--file` to instead save it to a file in the temporary directory of the user's OS (not the current workspace), named meaningfully with today's date, e.g. `handoff-<topic>-YYYY-MM-DD.md`.
 
 Include a "suggested skills" section in the document, which suggests skills that the agent should invoke.
 
