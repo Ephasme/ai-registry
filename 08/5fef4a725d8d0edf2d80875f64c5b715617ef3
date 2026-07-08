@@ -1,0 +1,29 @@
+plugins/claude-tools/skills/handoff/SKILL.md
+  s_d7b92e2e01e4f4::t_9aed3f6f3de283 4,14,18-82
+plugins/claude-tools/skills/handoff/scripts/pack.py
+  s_d7b92e2e01e4f4::t_4ce1a49f010289 1-64
+plugins/claude-tools/skills/handoff/scripts/record_project.py
+  s_d7b92e2e01e4f4::t_9badad4e082a9e 1-75
+plugins/claude-tools/skills/handoff/scripts/resolve_project.py
+  s_d7b92e2e01e4f4::t_0a8cad2438712d 1-128
+plugins/claude-tools/skills/handoff/scripts/send.py
+  s_d7b92e2e01e4f4::t_785e09091e1413 1-90
+plugins/claude-tools/skills/handoff/scripts/unpack_remote.py
+  s_d7b92e2e01e4f4::t_c5a372bac7812e 1-87
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "085fef4a725d8d0edf2d80875f64c5b715617ef3",
+  "prompts": {},
+  "sessions": {
+    "s_d7b92e2e01e4f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_d7b92e2e01e4f4",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
