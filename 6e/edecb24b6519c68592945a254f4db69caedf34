@@ -1,0 +1,23 @@
+plugins/communication/.claude-plugin/plugin.json
+  s_3520562ab9718d::t_70d730f7eb00d8 3,27-37
+plugins/communication/.mcp.json
+  s_3520562ab9718d::t_4c882317bdf7e4 18-25
+secrets/cloudflare-access.sops.json
+  s_3520562ab9718d::t_38c5a9a339a757 2-25,29,33-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "6eedecb24b6519c68592945a254f4db69caedf34",
+  "prompts": {},
+  "sessions": {
+    "s_3520562ab9718d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_3520562ab9718d",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
