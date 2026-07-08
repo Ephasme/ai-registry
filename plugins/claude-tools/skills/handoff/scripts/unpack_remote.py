@@ -8,8 +8,19 @@ archive to a directory on <target>.
 Usage:
     unpack_remote.py <target> <remote-archive-path> <remote-project-path>
 
-remote-archive-path is the exact path send.py printed, e.g.
-/tmp/tmp.Ab12Cd/handoff-topic-2026-07-08.tar.gz.
+remote-archive-path is the path send.py printed, taken as-is -- send.py
+prints "<target>:<remote-dir>/<basename>" (e.g.
+"macmini:/tmp/tmp.Ab12Cd/handoff-topic-2026-07-08.tar.gz"), and that whole
+string, target prefix included, is what the skill tells the calling agent to
+pass through verbatim. This script strips a leading "<target>:" itself if
+present, so both that form and a bare path (e.g.
+"/tmp/tmp.Ab12Cd/handoff-topic-2026-07-08.tar.gz") work. It must strip it:
+once ssh has already connected to the remote, the path used there has to be
+bare -- re-including the host prefix doesn't just look redundant, it actively
+breaks the extraction, because tar -f on macOS/BSD still honors the legacy
+`host:file` remote-tape syntax and tries to open a *second*, remote-from-the-
+remote file over rsh, producing a confusing "No such file or directory" for
+what looks like a totally unrelated path fragment.
 remote-project-path is the remote project directory to unpack into -- must
 already exist (resolve_project.py finds it). Prints
 "<target>:<remote-project-path>/<pack-name>" to stdout on success, where
@@ -43,6 +54,13 @@ def main(argv):
 
     if not validate_target(args.target):
         return 1
+
+    # Accept send.py's own printed form ("<target>:<path>") as-is, per the
+    # skill's "pass it through verbatim" instruction -- see module docstring
+    # for why this must become a bare path before it's used remotely.
+    prefix = f"{args.target}:"
+    if args.remote_archive.startswith(prefix):
+        args.remote_archive = args.remote_archive[len(prefix):]
 
     check = subprocess.run(
         ["ssh", *SSH_OPTS, "--", args.target, f"test -d {shlex.quote(args.remote_project)}"],
