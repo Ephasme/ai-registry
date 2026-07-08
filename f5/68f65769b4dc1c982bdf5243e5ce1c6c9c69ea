@@ -1,0 +1,19 @@
+plugins/claude-tools/skills/handoff/scripts/unpack_remote.py
+  s_3d7351021dcb44::t_1f9427cf10e282 11-23,58-64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f568f65769b4dc1c982bdf5243e5ce1c6c9c69ea",
+  "prompts": {},
+  "sessions": {
+    "s_3d7351021dcb44": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_3d7351021dcb44",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
