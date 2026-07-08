@@ -15,6 +15,14 @@
         "CF-Access-Client-Id": "${user_config.WACLI_CF_ACCESS_CLIENT_ID}",
         "CF-Access-Client-Secret": "${user_config.WACLI_CF_ACCESS_CLIENT_SECRET}"
       }
+    },
+    "imessage": {
+      "type": "http",
+      "url": "https://imessage.loup-peluso.com/mcp",
+      "headers": {
+        "CF-Access-Client-Id": "${user_config.IMESSAGE_CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${user_config.IMESSAGE_CF_ACCESS_CLIENT_SECRET}"
+      }
     }
   }
 }

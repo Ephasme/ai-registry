@@ -1,6 +1,6 @@
 {
   "name": "communication",
-  "description": "Reach people — Slack and WhatsApp (wacli), each on its own dedicated host behind Cloudflare Access. Supply the per-server Cloudflare Access service-token credentials to enable.",
+  "description": "Reach people — Slack, WhatsApp (wacli), and iMessage, each on its own dedicated host behind Cloudflare Access. Supply the per-server Cloudflare Access service-token credentials to enable.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "SLACK_CF_ACCESS_CLIENT_ID": {
@@ -23,6 +23,17 @@
       "type": "string",
       "title": "Wacli — CF Access Client Secret",
       "description": "CF-Access-Client-Secret for wacli.loup-peluso.com. Stored in the system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
+      "sensitive": true
+    },
+    "IMESSAGE_CF_ACCESS_CLIENT_ID": {
+      "type": "string",
+      "title": "iMessage — CF Access Client ID",
+      "description": "CF-Access-Client-Id for imessage.loup-peluso.com (per-MCP service token; ends in .access)."
+    },
+    "IMESSAGE_CF_ACCESS_CLIENT_SECRET": {
+      "type": "string",
+      "title": "iMessage — CF Access Client Secret",
+      "description": "CF-Access-Client-Secret for imessage.loup-peluso.com. Stored in the system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
       "sensitive": true
     }
   }
