@@ -119,7 +119,8 @@ def set_in_dir(
             print(f"  ⚠ {key}: not declared in this plugin's userConfig "
                   "(claude will reject it unless the manifest declares it).")
         else:
-            dest = "keychain" if spec.get("sensitive") else "settings.json"
+            dest = (c.sensitive_store_label() if spec.get("sensitive")
+                    else "settings.json")
             print(f"  • {key} -> {dest}")
 
     # 3. Snapshot keychain (before) if asked.
@@ -200,10 +201,15 @@ def main(argv: List[str]) -> int:
         print("\n--- verification ---")
         for d in dirs:
             diagnose.print_report(diagnose.diagnose_one(d, args.plugin_id))
-        print("\nNote: sensitive values can't be read back by name, so a "
-              "[sensitive] field with no warning just means no plaintext copy "
-              "is lingering -- not proof the keychain write succeeded. Confirm "
-              "by checking the plugin actually works (its MCP server connects).")
+        if c.is_macos():
+            print("\nNote: on macOS sensitive values can't be read back by name, "
+                  "so a [sensitive] field with no warning just means no plaintext "
+                  "copy is lingering -- not proof the keychain write succeeded. "
+                  "Confirm by checking the plugin works (its MCP server connects).")
+        else:
+            print("\nNote: a 'set' status for a [sensitive] field means the key is "
+                  "present in .credentials.json (not the value) -- strong, but the "
+                  "decisive check is still that the plugin's MCP server connects.")
 
     return 0 if ok else 1
 

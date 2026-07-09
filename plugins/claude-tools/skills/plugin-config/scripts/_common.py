@@ -228,6 +228,37 @@ def read_settings_options(config_dir: Path, full_id: str) -> List[Tuple[str, dic
     return found
 
 
+def credentials_secret_keys(config_dir: Path, full_id: str) -> Optional[List[str]]:
+    """Declared secret keys present for a plugin in <config-dir>/.credentials.json.
+
+    On Linux/Windows/headless (no OS keychain) Claude Code stores sensitive
+    userConfig values in .credentials.json under::
+
+        {"pluginSecrets": {"<plugin>@<marketplace>": {"<KEY>": "<wrapped-value>"}}}
+
+    This returns the list of KEY names present for ``full_id`` -- names only,
+    never the values -- so callers can *confirm a sensitive field is actually
+    set* rather than guessing. Returns:
+
+      - a list of key names (possibly empty) when the file is present and
+        parseable as JSON with a pluginSecrets map, or
+      - None when the file is absent or unparseable (caller should treat the
+        sensitive store as opaque, e.g. the macOS keychain).
+    """
+    path = config_dir / ".credentials.json"
+    data = load_json(path)
+    if not isinstance(data, dict):
+        return None
+    ps = data.get("pluginSecrets")
+    if not isinstance(ps, dict):
+        # File exists (e.g. holds only OAuth tokens) but no plugin secrets map.
+        return []
+    entry = ps.get(full_id)
+    if not isinstance(entry, dict):
+        return []
+    return sorted(entry.keys())
+
+
 def credentials_state(config_dir: Path, plugin_name: str, keys: List[str]) -> dict:
     """Best-effort look at <config-dir>/.credentials.json (the keychain fallback).
 
@@ -248,11 +279,40 @@ def credentials_state(config_dir: Path, plugin_name: str, keys: List[str]) -> di
 
 
 # --------------------------------------------------------------------------- #
+# Installed-plugin inventory
+# --------------------------------------------------------------------------- #
+
+def list_installed_plugins(config_dir: Path) -> List[str]:
+    """Full ids ("<name>@<marketplace>") of plugins installed in a config dir.
+
+    Reads plugins/installed_plugins.json, the source of truth for what is
+    actually installed. Only ids with at least one entry carrying an installPath
+    are returned. Sorted, de-duplicated.
+    """
+    data = load_json(config_dir / "plugins" / "installed_plugins.json")
+    plugins = data.get("plugins") if isinstance(data, dict) else None
+    if not isinstance(plugins, dict):
+        return []
+    out = set()
+    for full_id, entries in plugins.items():
+        if not isinstance(entries, list):
+            continue
+        if any(isinstance(e, dict) and e.get("installPath") for e in entries):
+            out.add(full_id)
+    return sorted(out)
+
+
+# --------------------------------------------------------------------------- #
 # Misc
 # --------------------------------------------------------------------------- #
 
 def is_macos() -> bool:
     return platform.system() == "Darwin"
+
+
+def sensitive_store_label() -> str:
+    """Human name for where sensitive values land on this platform."""
+    return "macOS keychain" if is_macos() else ".credentials.json"
 
 
 def mask(value: Optional[str]) -> str:

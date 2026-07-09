@@ -57,7 +57,19 @@ security add-generic-password -U -s "<service>" -a "<account>" -w "<new-value>"
 
 …but prefer `set_config.py`, which uses Claude Code's own validated storage path.
 
-**Linux / Windows / headless:** if no OS keychain is available, sensitive values fall back to `<config-dir>/.credentials.json`. `keychain_probe.py` is macOS-only (`security`); on other platforms, inspect `.credentials.json` (it also holds OAuth tokens — treat it as secret).
+**Linux / Windows / headless:** if no OS keychain is available, sensitive values fall back to `<config-dir>/.credentials.json`, under a `pluginSecrets` map keyed by full plugin id:
+
+```json
+{
+  "claudeAiOauth": { "...": "..." },
+  "mcpOAuth":      { "plugin:<plugin>:<server>|<hash>": { "...": "..." } },
+  "pluginSecrets": {
+    "<plugin>@<marketplace>": { "<KEY>": "<wrapped-value>" }
+  }
+}
+```
+
+The value strings are wrapped/opaque (do not assume they're the raw secret), but the **key presence is authoritative**: a `KEY` under `pluginSecrets["<id>"]` means that sensitive field is set. `diagnose.py` reads exactly this to report `set` / `unset` per sensitive field on these platforms — names only, never values. `keychain_probe.py` is macOS-only (`security`); elsewhere `.credentials.json` is the thing to inspect (it also holds OAuth tokens — treat the whole file as secret).
 
 ## CLI reference
 

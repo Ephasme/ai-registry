@@ -69,32 +69,53 @@ def diagnose_one(config_dir: Path, plugin_id: str) -> dict:
 
     keys = list(user_config.keys())
     creds = c.credentials_state(config_dir, plugin_name, keys)
+    # On Linux/headless the sensitive store (.credentials.json) is parseable, so
+    # we can *confirm* a sensitive field is set rather than guess. None means the
+    # store is opaque here (macOS keychain, or file absent/unreadable).
+    cred_keys = c.credentials_secret_keys(config_dir, full_id)
+    store = c.sensitive_store_label()
 
     fields = []
     for key, spec in user_config.items():
         sensitive = bool(spec.get("sensitive"))
         in_settings = key in option_source
+        in_creds = cred_keys is not None and key in cred_keys
         warnings = []
-        if sensitive and in_settings:
-            warnings.append(
-                f"value is in plaintext {option_source[key]} but the field is "
-                "sensitive -> Claude Code reads it from the keychain, so this "
-                "copy is IGNORED (and will be wiped if settings.json is "
-                "regenerated). Re-set it with set_config.py."
-            )
-        elif sensitive and not in_settings:
-            warnings.append(
-                "sensitive -> expected in the keychain; can't confirm by name. "
-                "Use keychain_probe.py, or just (re)set it to be sure."
-            )
-        elif not sensitive and not in_settings:
-            warnings.append("not set in settings.json -> currently unset.")
+        # status: set | unset | mismatch | unknown
+        if sensitive:
+            if in_settings:
+                status = "mismatch"
+                warnings.append(
+                    f"value is in plaintext {option_source[key]} but the field is "
+                    f"sensitive -> Claude Code reads it from {store}, so this copy "
+                    "is IGNORED (and will be wiped if settings.json is "
+                    "regenerated). Re-set it with set_config.py."
+                )
+            elif in_creds:
+                status = "set"  # confirmed present in .credentials.json
+            elif cred_keys is not None:
+                status = "unset"
+                warnings.append(f"not present in {store} -> currently unset.")
+            else:
+                status = "unknown"
+                warnings.append(
+                    f"sensitive -> expected in the {store}; can't confirm by name "
+                    "here. Use keychain_probe.py, or just (re)set it to be sure."
+                )
+        else:
+            if in_settings:
+                status = "set"
+            else:
+                status = "unset"
+                warnings.append("not set in settings.json -> currently unset.")
         fields.append({
             "key": key,
             "sensitive": sensitive,
-            "expected_store": "keychain (or .credentials.json fallback)"
-            if sensitive else "settings.json pluginConfigs",
+            "status": status,
+            "expected_store": f"{store} (sensitive)" if sensitive
+            else "settings.json pluginConfigs",
             "in_settings": in_settings,
+            "in_credentials": in_creds,
             "settings_file": option_source.get(key),
             "warnings": warnings,
         })
@@ -122,12 +143,18 @@ def print_report(rep: dict) -> None:
     print(f"  manifest: {rep['manifest']}")
     if not rep["fields"]:
         print("  (plugin declares no userConfig fields)")
+    icon = {"set": "✓", "unset": "·", "mismatch": "⚠", "unknown": "?"}
     for f in rep["fields"]:
         flag = "sensitive" if f["sensitive"] else "plain"
-        where = f["settings_file"] if f["in_settings"] else "—"
-        print(f"\n  • {f['key']}  [{flag}]")
+        st = f.get("status", "unknown")
+        if f["sensitive"]:
+            where = (f["settings_file"] if f["in_settings"]
+                     else (".credentials.json" if f.get("in_credentials") else "—"))
+        else:
+            where = f["settings_file"] if f["in_settings"] else "—"
+        print(f"\n  {icon.get(st, '?')} {f['key']}  [{flag}]  {st}")
         print(f"      expected store : {f['expected_store']}")
-        print(f"      in settings    : {where}")
+        print(f"      found in       : {where}")
         for w in f["warnings"]:
             print(f"      ⚠ {w}")
     if rep["stray_options"]:
