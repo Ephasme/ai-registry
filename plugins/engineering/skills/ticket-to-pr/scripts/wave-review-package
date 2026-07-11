@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Generate the review package for ONE task inside a wave: the commit list, a stat summary, and
+# the full diff with extended context, written to a file the reviewer reads in one call.
+#
+# Each task in a wave builds in its OWN git worktree, detached at the wave's base commit. That
+# gives every builder a private index and HEAD, so:
+#   - builders commit freely, in parallel, with no index.lock races (the object database is
+#     content-addressed and concurrency-safe; nothing else is shared);
+#   - a task's diff is a real commit range, BASE..HEAD, inside its own worktree;
+#   - a reviewer sees ONLY its own task's work. A sibling's half-finished edit cannot leak into
+#     the diff, into a focused test run, or into any file the reviewer reads.
+#
+# That last point is the reason for the worktrees. Disjoint write-sets (Phase 6) already stop two
+# builders from writing the same file — but they do not stop task B from READING a file task A is
+# midway through rewriting. In one shared tree, B's own verify command can fail (or pass) against
+# a torn state that has nothing to do with B. Isolation removes that whole class of ghost.
+#
+# Usage: wave-review-package TASK_ID WORKTREE BASE
+# Writes: <main-repo>/.ticket-to-pr/review-<task-id>-r<N>.diff  (N auto-increments, so a re-review
+#         after fixes reads a fresh file, never a stale one)
+# Prints: the path it wrote, plus a size summary.
+set -euo pipefail
+
+if [ $# -ne 3 ]; then
+  echo "usage: wave-review-package TASK_ID WORKTREE BASE" >&2
+  exit 2
+fi
+
+task=$1
+wt=$2
+base=$3
+
+[ -d "$wt" ] || { echo "no such worktree: $wt" >&2; exit 2; }
+git -C "$wt" rev-parse --verify --quiet "$base" >/dev/null || { echo "bad BASE: $base" >&2; exit 2; }
+
+# The artifacts live in the MAIN working tree, not the per-task worktree — the worktrees are torn
+# down at the wave gate, and the review trail has to outlive them.
+root=$(git -C "$wt" rev-parse --path-format=absolute --git-common-dir)
+root=$(dirname "$root")
+dir="$root/.ticket-to-pr"
+mkdir -p "$dir"
+printf '*\n' > "$dir/.gitignore"   # self-ignoring scratch: never in git status, never committed
+
+n=1
+while [ -e "$dir/review-${task}-r${n}.diff" ]; do n=$((n + 1)); done
+out="$dir/review-${task}-r${n}.diff"
+
+head=$(git -C "$wt" rev-parse HEAD)
+
+{
+  echo "# Review package: task ${task} (round ${n})"
+  echo "# Worktree: ${wt}"
+  echo "# Range: ${base}..${head}"
+  echo
+  echo "## Commits"
+  git -C "$wt" log --oneline "${base}..${head}"
+  echo
+  echo "## Files changed"
+  git -C "$wt" diff --stat "${base}..${head}"
+  echo
+  echo "## Uncommitted (should be empty — the builder is required to commit its work)"
+  git -C "$wt" status --porcelain
+  echo
+  echo "## Diff"
+  git -C "$wt" diff -U10 "${base}..${head}"
+} > "$out"
+
+commits=$(git -C "$wt" rev-list --count "${base}..${head}")
+echo "wrote ${out}: ${commits} commit(s), $(wc -c < "$out" | tr -d ' ') bytes"

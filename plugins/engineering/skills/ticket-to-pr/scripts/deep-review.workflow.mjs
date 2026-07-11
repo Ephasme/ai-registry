@@ -26,8 +26,8 @@ export const meta = {
   description: 'Scope-split plan review: split the plan, Sonnet finds bugs/risks per scope, a second Sonnet confirms/refutes each, Haiku scores criticality. Returns confirmed, scored issues for the orchestrator to fix.',
   phases: [
     { title: 'Split', detail: 'split the plan into independent review scopes' },
-    { title: 'Find', detail: 'one Sonnet 4.6 agent per scope hunts bugs/risks' },
-    { title: 'Verify', detail: 'a second Sonnet 4.6 agent confirms/refutes each candidate' },
+    { title: 'Find', detail: 'one Sonnet 5 agent per scope hunts bugs/risks' },
+    { title: 'Verify', detail: 'a second Sonnet 5 agent confirms/refutes each candidate' },
     { title: 'Score', detail: 'Haiku scores criticality of survivors' },
   ],
 }

@@ -3,29 +3,29 @@ name: ticket-to-pr
 description: >-
   Drive a single ticket or specification from spec all the way to a reviewed pull
   request — end to end: understand → plan → harden → handoff-review → (conditional
-  deep review) → implement → verify → branch/commit/push/PR → code-review →
-  fix-until-clean → handoff. Use this when the user hands over a unit of work to be
-  taken to completion: a Notion page/ID, a GitHub Issue or Project item, a Linear
-  issue, or a raw written spec (pasted or a file path), and says something like
-  "take this ticket to a PR", "implement NID-123 end to end", "ship this issue",
-  "do this spec and open a PR", or "drive this from spec to merge". It commits,
-  pushes, and opens PRs — outward-facing steps it pauses to confirm before taking
-  unless you pre-authorize hands-off completion.
+  deep review) → task graph → implement (parallel, wave by wave) → verify →
+  branch/commit/push/PR → code-review → fix-until-clean → handoff. Use this when the
+  user hands over a unit of work to be taken to completion: a Notion page/ID, a GitHub
+  Issue or Project item, a Linear issue, or a raw written spec (pasted or a file path),
+  and says something like "take this ticket to a PR", "implement NID-123 end to end",
+  "ship this issue", "do this spec and open a PR", or "drive this from spec to merge".
+  It commits, pushes, and opens PRs — outward-facing steps it pauses to confirm before
+  taking unless you pre-authorize hands-off completion.
 ---
 
 # ticket-to-pr — from specification to a reviewed PR
 
 Take one ticket and carry it the whole distance: read and ground the spec, plan it,
-harden the plan, implement, prove it works, open a PR, get it reviewed, and fix
-findings until the PR is clean — then hand it back with a summary. The value is in
-the *gates between phases*: each step refuses to advance on a shaky foundation, so a
-misread requirement or a red test never silently rides through to a merged PR.
+harden the plan, break it into a task graph, implement it, prove it works, open a PR, get
+it reviewed, and fix findings until the PR is clean — then hand it back with a summary.
+The value is in the *gates between phases*: each step refuses to advance on a shaky
+foundation, so a misread requirement or a red test never silently rides through to a
+merged PR.
 
-This skill orchestrates other skills rather than reimplementing them. Where a
-specialist skill exists (`superpowers:writing-plans`, `engineering:plan-hardening`,
-…), it delegates; where one is missing, it states and uses a fallback. It runs only
-when you invoke it explicitly — it pushes branches and opens PRs, which must never
-happen on a guess.
+This skill orchestrates other skills rather than reimplementing them. Where a specialist
+skill exists (`superpowers:writing-plans`, `engineering:plan-hardening`, …), it delegates;
+where one is missing, it states and uses a fallback. It runs only when you invoke it
+explicitly — it pushes branches and opens PRs, which must never happen on a guess.
 
 ## At a glance
 
@@ -36,21 +36,29 @@ happen on a guess.
 3  HARDEN           → plan-hardening, loop-until-clean
 4  HANDOFF REVIEW   → spec-handoff-review, loop-until-clean
 5  DEEP REVIEW      → only if 3–4 kept surfacing serious findings, or asked (multi-agent workflow)
-6  IMPLEMENT        → executing-plans  (else implement directly)
-7  VERIFY           → build/test/lint must pass, with evidence
-8  BRANCH→PR        → GATE: confirm before push & PR; link the ticket
-9  CODE REVIEW      → code-review (working diff) / review (open PR)
-10 FIX FINDINGS     → address all, push, re-review, loop-until-clean
-11 HANDOFF          → summary, PR link, leftovers → back to the human
+6  TASK GRAPH       → plan → atomic tasks → dependency DAG → ordered waves; pick each task's
+                      builder + reviewer models
+                      GATE: show the graph before the swarm — last cheap checkpoint
+7  IMPLEMENT        → run the graph wave by wave. Per task: an isolated worktree, a builder, then
+                      an independent reviewer (spec + quality) + fix loop — parallel within a wave
+8  VERIFY           → build/test/lint must pass, with evidence
+9  PUSH→PR          → GATE: confirm before push & PR; link the ticket
+10 CODE REVIEW      → code-review (working diff) / review (open PR)
+11 FIX FINDINGS     → address all, push, re-review, loop-until-clean
+12 HANDOFF          → summary, PR link, leftovers → back to the human
 ```
+
+**Phases vs waves.** *Phases* are the thirteen numbered steps above (0–12) — the pipeline.
+*Waves* (W1, W2, …) exist only inside Phases 6–7: they are the dependency levels of the
+task graph. The two never share a numbering.
 
 ## Before you begin — the phase ledger (mandatory)
 
 This pipeline only works if every phase actually runs, in order, with its gate honoured. To
 make that auditable instead of best-effort, **do these two things — they are not optional:**
 
-1. **Open the ledger first.** Before Phase 0, call **TodoWrite** with all twelve phases
-   (0–11) as separate items, in order. This is the first action the skill takes — before
+1. **Open the ledger first.** Before Phase 0, call **TodoWrite** with all thirteen phases
+   (0–12) as separate items, in order. This is the first action the skill takes — before
    reading the ticket, before any tool call. The ledger stays in front of you for the whole
    run so a phase can't quietly fall off.
 
@@ -60,23 +68,25 @@ make that auditable instead of best-effort, **do these two things — they are n
    completion criterion. Then move the next phase to `in_progress`. Do not batch-complete,
    do not skip ahead, and do not mark a phase done because it "probably would have passed".
 
-The only sanctioned deviations from strict 0→11 order are the ones the phases themselves
+The only sanctioned deviations from strict 0→12 order are the ones the phases themselves
 document: **Phase 5** may be skipped (say so, with the receipt noting *why*), and a failed
-gate in **Phase 7** or **Phase 10** sends you **back** to an earlier phase (re-open that
-todo, don't leave it falsely complete). Any other skip is a bug in your execution, not a
-shortcut.
+gate sends you **back** to an earlier phase — **Phase 7** (a failed task or wave gate) back
+to Phase 6 or 2, **Phase 8** (red build) back to Phase 7, **Phase 11** (review findings)
+back to Phase 7 and then 8. When you go back, **re-open that todo**; don't leave it falsely
+complete. Any other skip is a bug in your execution, not a shortcut.
 
 ## Operating rules (apply to every phase)
 
-These five behaviours recur throughout; internalize them once so each phase stays short.
+These six behaviours recur throughout; internalize them once so each phase stays short.
 
 - **Print an exit receipt before advancing.** Every phase ends with one line of the form
   `✅ Phase N (<NAME>) — <which path ran> — <evidence>`, e.g.
-  `✅ Phase 7 (VERIFY) — ran pnpm test+lint+build — 142 passed, 0 failed (output above)`, or
-  `✅ Phase 5 (DEEP REVIEW) — skipped: phases 3–4 surfaced no serious findings`. The receipt
-  names the branch you took (skill vs fallback, run vs skip) and points at the concrete
-  evidence that the phase's stated **Exit** condition is met. No receipt → the phase isn't
-  done → you may not move on. This is what makes a skipped step impossible to hide.
+  `✅ Phase 8 (VERIFY) — ran pnpm test+lint+build — 142 passed, 0 failed (output above)`, or
+  `✅ Phase 5 (DEEP REVIEW) — skipped: phases 3–4 surfaced no serious findings`, or
+  `✅ Phase 7 (IMPLEMENT) — swarm, 9 tasks over 3 waves — all wave gates green (output above)`.
+  The receipt names the branch you took (skill vs fallback, run vs skip) and points at the
+  concrete evidence that the phase's stated **Exit** condition is met. No receipt → the phase
+  isn't done → you may not move on. This is what makes a skipped step impossible to hide.
 
 - **Loop-until-clean — converge, don't count.** Whenever a phase says "fix all issues", it
   means: fix every **critical/major** finding, then re-run the reviewer; repeat until a clean
@@ -94,6 +104,21 @@ These five behaviours recur throughout; internalize them once so each phase stay
   hardening unavailable, did an inline hardening pass" — so they know whether the
   rigorous tool or the substitute did the work.
 
+- **Fan-out cost guard — more than ~20 agents, confirm first.** Two phases fan out to a
+  multi-agent swarm: **5** (a reviewer per scope + a verifier per finding) and **7** (a builder
+  *and* an independent reviewer per task, plus fix rounds, plus a setup and a gate per wave —
+  so budget `2T + 2W` at the floor and closer to `3T + 2W` in practice). Invoking this skill
+  opts you into multi-agent work in general, but a big fan-out costs real tokens: if a run
+  would spawn **more than ~20 agents**, say the number and **confirm with the human before
+  launching**. Both phases use the same guard and the same `Workflow` machinery — don't invent
+  a second spawning convention. (The runtime also caps concurrency and total agents, but that's
+  a backstop, not a substitute for the heads-up.)
+
+- **Always set a subagent's model *and* effort.** An omitted `model` inherits the
+  orchestrator's (Opus 4.8); an omitted `effort` inherits the session's (`xhigh`). Either one
+  silently turns a cheap swarm expensive — and the effort trap is the easier to miss, because
+  the agent still *looks* like it's running on Haiku. Every dispatch names both.
+
 - **Confirm before anything irreversible or outward-facing.** Pushing a branch, opening a
   PR, and posting review comments leave your fingerprints on shared infrastructure. Pause
   for explicit go-ahead before those, unless the human pre-authorized hands-off completion
@@ -106,175 +131,208 @@ These five behaviours recur throughout; internalize them once so each phase stay
 
 ---
 
-## Phase 0 — Identify the input
+## Phase 0 — IDENTIFY INPUT
 
-Determine *what* to work on and *where it lives* before anything else. Accept any of:
-a **Notion** page (URL or ID), a **GitHub** Issue or Project item, a **Linear** issue, or
-a **raw spec** (pasted into chat or a file path). Detect the source from what was given —
-URL shape, ID pattern, or "here's the spec" — and read it through the right channel.
+Determine *what* to work on and *where it lives* before anything else. Accept any of: a
+**Notion** page (URL or ID), a **GitHub** Issue or Project item, a **Linear** issue, or a
+**raw spec** (pasted or a file path). Detect the source from what was given — URL shape, ID
+pattern, or "here's the spec" — and read it through the right channel. If the user gave
+nothing to work from, **ask** which ticket or spec to drive; don't pick one.
 
-If the user gave nothing to work from, **ask which ticket or spec** to drive; don't pick one.
+- **IF the source's MCP is connected** → read the ticket through it.
+  **ELSE** → use the CLI (`gh`) where one exists, otherwise ask the user to paste the ticket.
 
-Source detection, the tool for each, and the fallback when an MCP isn't connected are in
-[`references/input-sources.md`](references/input-sources.md) — read it now if the source is
-anything other than a spec already pasted in front of you.
+**Exit:** the ticket id/key, its full requirement text, and its linked context are in front
+of you. → [`references/phase-0-identify-input.md`](references/phase-0-identify-input.md)
 
 ## Phase 1 — UNDERSTAND
 
-Read the ticket/spec **in full**, then ground it in reality: explore the relevant code,
-folders, and docs so your understanding is anchored in how the system actually works, not
-how the ticket imagines it. Use the **Explore** agent (or search + targeted reads) to find
-the affected components and read any files the ticket references.
+Read the ticket **in full**, then ground it in reality: explore the affected code, folders,
+and docs so your understanding is anchored in how the system actually works, not how the
+ticket imagines it. Then restate the goal, scope (in *and* out), acceptance criteria,
+affected components, and open questions.
 
-Then **restate**, concisely:
-- **Goal** — the outcome, stated briefly.
-- **Scope** — what's in, and explicitly what's out.
-- **Acceptance criteria** — how "done" is judged.
-- **Affected components** — files/modules/services you expect to touch.
-- **Open questions** — anything ambiguous, missing, or contradictory.
+**GATE:** if anything is unclear or under-specified — fuzzy acceptance criteria, an undefined
+term, a decision the ticket leaves open — **stop and ask the human targeted questions.** Do
+not invent requirements to fill the gap; a confidently wrong assumption here is the most
+expensive error in the pipeline, because every later phase compounds it.
 
-**GATE:** if anything is unclear or under-specified — fuzzy acceptance criteria, an
-undefined term, a decision the ticket leaves open — **stop and ask the human targeted
-questions.** Do not invent requirements or acceptance criteria to fill the gap; a confidently
-wrong assumption here is the most expensive error in the whole pipeline, because every later
-phase compounds it. **Exit:** a written restatement, with open questions resolved.
+**Exit:** a written restatement, with open questions resolved.
+→ [`references/phase-1-understand.md`](references/phase-1-understand.md)
 
 ## Phase 2 — PLAN
 
-Turn the understanding into a concrete, ordered implementation plan.
+Turn the understanding into a concrete, ordered implementation plan: the steps, the files
+each touches, the tests, and the risks.
 
 - **IF `superpowers:writing-plans` is available** → use it; it produces a structured,
   reviewable plan.
-- **ELSE** → enter plan mode and write an equivalent plan yourself: the steps in order,
-  the files each touches, the tests, and the risks.
+- **ELSE** → enter plan mode and write an equivalent plan yourself.
 
 **Exit:** a written plan exists — a plan file, or a plan-mode artifact you can hand to the
-next phase.
+next phase. → [`references/phase-2-plan.md`](references/phase-2-plan.md)
 
 ## Phase 3 — HARDEN
 
-Run the plan through **`engineering:plan-hardening`**, which verifies the plan's claims
-against the codebase and surfaces unhandled collateral damage. Fix every critical/major
-finding and re-run (loop-until-clean — see Operating rules). If `plan-hardening`
-isn't available, do an inline equivalent: re-read the plan adversarially against the code,
-checking each claim and each "this won't affect X" assumption, and fix what breaks.
+Verify the plan's claims against the codebase and surface the collateral damage it doesn't
+handle. Fix every critical/major finding and re-run (loop-until-clean).
+
+- **IF `engineering:plan-hardening` is available** → run it on the plan.
+- **ELSE** → do an inline equivalent: re-read the plan adversarially against the code,
+  checking each claim and each "this won't affect X" assumption, and fix what breaks.
 
 **Exit:** a hardening pass with no critical/major findings (or a plateau reached and the
-remainder surfaced).
+remainder surfaced). → [`references/phase-3-harden.md`](references/phase-3-harden.md)
 
 ## Phase 4 — HANDOFF REVIEW
 
-Run **`engineering:spec-handoff-review`** — the closing structural pass that hunts for
-ambiguity, missing contracts, and unstated assumptions that would let two engineers build
-incompatible things. Fix all issues; re-run until clean. Fallback if unavailable:
-review the plan yourself for two-implementer divergence, hidden assumptions, and unhandled
-state transitions, and resolve them.
+The closing structural pass: hunt for ambiguity, missing contracts, and unstated assumptions
+that would let two engineers build incompatible things. Fix all issues; re-run until clean.
+
+- **IF `engineering:spec-handoff-review` is available** → run it on the plan.
+- **ELSE** → review the plan yourself for two-implementer divergence, hidden assumptions, and
+  unhandled state transitions, and resolve them.
 
 **Exit:** a clean handoff review (or a plateau reached + surfaced).
+→ [`references/phase-4-handoff-review.md`](references/phase-4-handoff-review.md)
 
 ## Phase 5 — DEEP REVIEW (conditional)
 
-This is heavier multi-agent scrutiny, run **only when warranted** — it costs real tokens, so
-it's gated:
+Heavier multi-agent scrutiny of the plan — a find → verify → score → reconcile fan-out where
+an independent agent must confirm or refute every candidate finding before it can change the
+plan. It costs real tokens, so it's gated.
 
-- **TRIGGER:** phases 3–4 **kept surfacing serious problems** — a steady stream of
-  critical/major findings that says the plan is genuinely error-prone, not a one-off — OR the
-  human asks for a deep review. If neither holds, **skip to Phase 6** and say you skipped it
-  and why (the plan held up). Invoking this skill opts you into the multi-agent work in
-  general; but because it fans out a reviewer per scope (plus a verifier per finding), if the
-  plan is large enough that the run would spawn a lot of agents — more than ~20, say —
-  **confirm with the human before launching**, since it costs real tokens.
+**TRIGGER:** Phases 3–4 **kept surfacing serious problems** — a steady stream of critical/major
+findings that says the plan is genuinely error-prone, not a one-off — **OR** the human asks for
+a deep review. If neither holds, **skip to Phase 6** and say you skipped it and why.
 
-- **WHAT:** spawn a dynamic multi-agent workflow that (a) splits the plan into scopes and has
-  one **Sonnet 4.6** agent review each scope for bugs/risks; (b) has a **second Sonnet 4.6**
-  agent independently **confirm/refute** each candidate bug; (c) scores each surviving bug's
-  criticality with a **Haiku** agent; and (d) returns the reconciled findings for **you (the
-  Opus 4.8 orchestrator)** to fix in the plan. The find→verify split keeps plausible-but-wrong
-  findings from surviving; the independent verifier is the point.
+- **IF the `Workflow` tool is available** → run the bundled script as-is, handing it the plan.
+- **ELSE** → approximate it with sequential subagents, preserving the find→verify→reconcile
+  discipline.
 
-The workflow is **pre-written and bundled** — run the script file as-is, handing it the plan.
-How to run it (`Workflow({ scriptPath, args })`), the fan-out cost guard, what it returns, and
-the no-Workflow fallback are in
-[`references/deep-review-workflow.md`](references/deep-review-workflow.md).
+Subject to the **fan-out cost guard** (Operating rules).
 
-**Exit:** a reconciled plan with every *confirmed* issue fixed.
+**Exit:** a reconciled plan with every *confirmed* issue fixed — or an explicit, justified skip.
+→ [`references/phase-5-deep-review.md`](references/phase-5-deep-review.md)
 
-## Phase 6 — IMPLEMENT
+## Phase 6 — TASK GRAPH
 
-- **IF `superpowers:executing-plans` is available** → use it to work the plan with its
-  built-in review checkpoints.
-- **ELSE** → implement the plan directly. Follow the **existing repo conventions** (match the
-  surrounding code's style, structure, and idioms) and keep the diff **scoped to the ticket** —
-  resist drive-by refactors and unrelated cleanups; they make review harder and dilute the PR.
+Turn the hardened, reviewed plan into an executable structure. Split it into **atomic tasks** —
+each sized so *one* builder agent can implement **and self-verify** it in a single focused session:
+single responsibility, independently testable, with a write-set you can name up front. Record each
+task's **inputs** (files/interfaces it depends on) and **outputs** (what downstream consumes), build
+the **dependency DAG** from those, and level it into ordered **waves** (W1 = no dependencies; each
+later wave's dependencies are met entirely by prior waves). Enforce the invariant the whole design
+rests on: **tasks in the same wave must have disjoint file footprints** — if two would write the same
+file, add a dependency edge so they serialize. Pick **each task's two models** (a builder chosen by
+*difficulty*, a reviewer chosen by *criticality* — independently). Emit it all as a **written,
+reviewable artifact**, the way the plan is.
 
-**Exit:** the plan is implemented in the working tree.
+**GATE:** surface the task graph, the wave plan, the model choices and the **projected agent count**
+to the human **before the swarm runs**. This is the last cheap checkpoint before spawning a dozen
+agents — a bad split is far cheaper to fix here than after they've written code against it. Pause for
+go-ahead unless hands-off completion was pre-authorized; the **fan-out cost guard** applies regardless.
 
-## Phase 7 — VERIFY
+**Exit:** a written task graph with a valid wave ordering (acyclic, footprint-disjoint per wave, both
+models chosen per task). → [`references/phase-6-task-graph.md`](references/phase-6-task-graph.md)
 
-Run the project's **build, tests, and lint** and confirm they pass **before claiming
-anything**. Use `superpowers:verification-before-completion` if available; otherwise run the
-project's own commands (discover them from `package.json` / `Makefile` / `justfile` / CI
-config) and read the output. Evidence before assertions (Operating rules).
+## Phase 7 — IMPLEMENT
 
-**GATE:** if anything is red, go back to Phase 6 and fix it — do **not** proceed to a PR on a
-broken build. If it can't be made green (environmental, flaky, out of scope), stop and tell
+Execute the task graph **wave by wave**, in dependency order. Each task gets its **own git worktree**
+and runs its own chain — **builder → independent task reviewer → (fixer → re-review)\*** — and those
+chains run **in parallel** across the wave. The reviewer returns **two verdicts, both of which must be
+clean**: *spec compliance* (did it build what was asked — nothing more, nothing less?) and *code
+quality*. A builder's self-review precedes that review; it never replaces it. The wave then **gates**:
+integrate every worktree into the main tree, verify it still builds, commit. Only then does the next
+wave start.
+
+Worktrees are what make this safe. Disjoint write-sets stop two builders **writing** the same file, but
+not one **reading** a file another is mid-rewrite in — isolation removes that, lets builders commit in
+parallel, and keeps a reviewer from ever seeing a sibling's unreviewed work. Integration can't conflict,
+because the footprints are disjoint.
+
+A task that fails blocks its dependents: retry once (escalated), and if it still fails, **stop and
+report** rather than pushing broken work downstream.
+
+- **IF the `Workflow` tool is available** → run the bundled wave-swarm script (the same machinery
+  Phase 5 uses), handing it the Phase-6 graph.
+- **ELSE** → execute the *same graph* with the *same contracts* sequentially — one task at a time in
+  wave order, still builder → reviewer → fix loop, via the **Agent** tool.
+
+Subject to the **fan-out cost guard** and the model/effort rule (Operating rules).
+
+**Exit:** every task built, reviewed clean on both verdicts, integrated and committed; every wave gate
+green. → [`references/phase-7-implement.md`](references/phase-7-implement.md)
+
+## Phase 8 — VERIFY
+
+Run the project's **full build, tests, and lint** — the whole suite, not the per-wave subset —
+and confirm they pass **before claiming anything**. The wave gates proved the pieces integrate;
+this proves the finished change is green. Evidence before assertions (Operating rules).
+
+- **IF `superpowers:verification-before-completion` is available** → use it.
+- **ELSE** → run the project's own commands (discover them from `package.json` / `Makefile` /
+  `justfile` / CI config) and read the output.
+
+**GATE:** if anything is red, go **back to Phase 7** and fix it — do **not** proceed to a PR on
+a broken build. If it can't be made green (environmental, flaky, out of scope), stop and tell
 the human exactly what's failing rather than papering over it.
 
 **Exit:** build/test/lint green, with the output shown.
+→ [`references/phase-8-verify.md`](references/phase-8-verify.md)
 
-## Phase 8 — BRANCH / COMMIT / PUSH / PR
+## Phase 9 — PUSH / PR
 
-**GATE — confirm before push and PR** unless the human pre-authorized hands-off completion.
-Then:
+The branch and its commits already exist — Phase 7 created the feature branch before any builder ran
+(they commit), and its wave gates committed each task. So this phase tidies the history if it needs it,
+**pushes**, and opens a PR whose description links the ticket, summarizes the change, and carries the
+Phase-8 verification evidence.
 
-1. Create a **feature branch** (never commit straight to the default branch).
-2. Commit with a clear message; match the repo's commit conventions (prefix style, any
-   required trailers/sign-off).
-3. **Push** the branch and **open a PR** with a description that links the ticket, summarizes
-   the change, and includes the Phase-7 verification evidence.
-4. For a **Notion** ticket, prefix the PR title with the ticket ID — e.g. `[NID-123] …` — so
-   the Notion↔GitHub integration auto-links the PR to the ticket.
-
-Branch naming, the PR body template, ticket-linking per source, and which tool opens the PR
-(GitHub MCP vs `gh`) are in [`references/pr-and-review.md`](references/pr-and-review.md).
+**GATE — confirm before push and PR** unless the human pre-authorized hands-off completion. Pushing and
+opening a PR are outward-facing (Operating rules); the local branch and commits were not.
 
 **Exit:** an open PR, its URL captured for the handoff.
+→ [`references/phase-9-branch-and-pr.md`](references/phase-9-branch-and-pr.md)
 
-## Phase 9 — CODE REVIEW
+## Phase 10 — CODE REVIEW
 
-Get the change reviewed:
-- **Prefer the `code-review` skill/command** on the working diff (`/code-review`).
-- For the **already-open GitHub PR**, use **`/review`** (it reviews the PR on GitHub).
-- **Fall back to `/code-review`** on the diff if the others aren't available.
+Get the change reviewed, and say which reviewer ran.
 
-State which reviewer ran. **Exit:** a review with its findings enumerated.
+- **IF the PR is already open** → use **`/review`** (it reviews the PR on GitHub).
+- **ELSE / fallback** → use **`/code-review`** on the working diff.
 
-## Phase 10 — FIX REVIEW FINDINGS
+**Exit:** a review with its findings enumerated.
+→ [`references/phase-10-code-review.md`](references/phase-10-code-review.md)
+
+## Phase 11 — FIX REVIEW FINDINGS
 
 Address **every** finding, push the fixes, and **re-review until clean** (loop-until-clean).
-Re-run Phase 7's verification after fixes so you don't trade a review nit for a broken
-build. If posting review-comment replies, that's outward-facing — confirm first unless
-pre-authorized. **Exit:** a review pass with no critical/major findings (or cap reached +
-surfaced).
+Re-run Phase 8's verification after each fix round so you don't trade a review nit for a broken
+build. Posting review-comment replies is outward-facing — confirm first unless pre-authorized.
 
-## Phase 11 — HANDOFF
+**GATE:** critical/major findings block; minor/nice-to-have go to the handoff notes. A fix that
+touches real behaviour goes back through **Phase 7 → 8**, not straight to a push.
 
-Close the loop with the human:
-- **What was built** — a short summary tied back to the acceptance criteria.
-- **The PR** — link, and its current state (green checks? review clean?).
-- **Leftovers** — deferred decisions, follow-up tickets worth filing, anything you
-  consciously left out of scope, and any findings surfaced at a loop cap.
+**Exit:** a review pass with no critical/major findings (or a plateau reached + surfaced).
+→ [`references/phase-11-fix-findings.md`](references/phase-11-fix-findings.md)
 
-Then hand it back. The handoff template is in
-[`references/pr-and-review.md`](references/pr-and-review.md). Done.
+## Phase 12 — HANDOFF
+
+Close the loop with the human: **what was built** (tied back to the acceptance criteria), **the
+PR** (link + current state: checks green? review clean?), and **leftovers** (deferred decisions,
+follow-up tickets worth filing, anything consciously left out of scope, any findings surfaced at
+a plateau). Then hand it back.
+
+**Exit:** the summary is delivered. Done.
+→ [`references/phase-12-handoff.md`](references/phase-12-handoff.md)
 
 ---
 
 ## If a phase can't proceed
 
-Honesty beats a clean-looking result. If a gate can't be satisfied (the spec stays
-ambiguous after questions, a review loop plateaus without converging, the build won't go
-green, an MCP/skill you need is absent with no workable fallback), **stop at that phase and
-report** where you are,
-what's blocking, and the options — rather than forcing past it. A pipeline that stops at a
-real obstacle is more useful than one that produces a confidently broken PR.
+Honesty beats a clean-looking result. If a gate can't be satisfied — the spec stays ambiguous
+after questions, a review loop plateaus without converging, the task graph won't come out
+acyclic, a task fails twice and blocks its dependents, the build won't go green, an MCP/skill
+you need is absent with no workable fallback — **stop at that phase and report** where you are,
+what's blocking, and the options, rather than forcing past it. A pipeline that stops at a real
+obstacle is more useful than one that produces a confidently broken PR.

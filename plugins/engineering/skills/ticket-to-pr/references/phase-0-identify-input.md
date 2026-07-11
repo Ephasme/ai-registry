@@ -1,4 +1,4 @@
-# Input sources — detection & reading
+# Phase 0 — IDENTIFY INPUT
 
 How to recognize the four ticket/spec sources and pull the work item through the right
 channel. The goal of this phase is to get the **full ticket content + any linked context**
@@ -29,7 +29,7 @@ artifact the user pointed at**. If nothing identifies a work item, **ask** which
   blocks or linked pages that carry requirements. Follow links the ticket leans on.
 - **Fallback (no Notion MCP — the common case here):** Notion pages need auth, so you can't
   fetch them blind. Ask the user to **paste the ticket content** (or export it to a file you
-  can read). Don't guess at a page you can't see. Note the ticket id regardless — Phase 8 needs
+  can read). Don't guess at a page you can't see. Note the ticket id regardless — Phase 9 needs
   it for the `[NID-123]` PR-title prefix.
 
 ## GitHub Issue or Project item
@@ -43,7 +43,7 @@ artifact the user pointed at**. If nothing identifies a work item, **ask** which
 - **Fallback:** if the GitHub MCP isn't connected, use the **`gh` CLI**
   (`gh issue view <n> --repo <org>/<repo> --comments`). If neither is available, ask the user
   to paste the issue.
-- Note the `<org>/<repo>` and issue number — Phase 8 links the PR back with `Closes #<n>`.
+- Note the `<org>/<repo>` and issue number — Phase 9 links the PR back with `Closes #<n>`.
 
 ## Linear issue
 
@@ -72,3 +72,6 @@ Whichever source, end this phase with: the **ticket id / number / key** (for PR 
 **full requirement text**, and the **linked context** that matters. If you had to fall back to
 a paste, say so — it means there may be linked context you couldn't see, which raises the bar
 for the Phase-1 open-questions check.
+
+**Exit receipt example:**
+`✅ Phase 0 (IDENTIFY INPUT) — Linear MCP — read ABC-123 "Per-tenant rate limiting" + 2 sub-issues`
