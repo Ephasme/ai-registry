@@ -162,8 +162,10 @@ don't race), which gives each reviewer a real `BASE..HEAD` range to review.
 **The cost** is that a fresh worktree has none of the project's gitignored build dependencies
 (`node_modules`, `.venv`, `target/`) — so tests can't run in it until they're provisioned. Record in the
 artifact how Phase 7 should provision one (`worktreeSetup`), usually a symlink to the main tree's
-`node_modules`. If the project genuinely can't be provisioned cheaply, say so and let Phase 7 fall back to
-shared-tree mode — where per-task verification becomes best-effort and the wave gate is the real check.
+`node_modules`. If the project genuinely can't be provisioned cheaply, say so in the artifact and let
+Phase 7 take its **sequential** path — one builder at a time in the main tree, which needs no isolation
+because nothing runs concurrently. What you must *not* do is keep the parallelism and drop the isolation:
+concurrent builders in one tree race on the git index and read each other's half-written files.
 
 ## Step 6 — Model selection — two independent axes
 

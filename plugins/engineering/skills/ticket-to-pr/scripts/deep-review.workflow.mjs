@@ -102,7 +102,7 @@ if (!scopes.length) {
     `step-cluster, or risk area — as many (or few) as the plan naturally warrants; don't pad ` +
     `to a target count. For each scope give a short \`key\` and a one-line \`focus\` naming ` +
     `what a reviewer should scrutinize there.\n\nPlan:\n${plan}`,
-    { label: 'split', phase: 'Split', model: 'sonnet', schema: SCOPES },
+    { label: 'split', phase: 'Split', model: 'sonnet', effort: 'medium', schema: SCOPES },
   )
   scopes = (split && split.scopes) || []
 }
@@ -116,7 +116,7 @@ const reviewed = await pipeline(
     `Find bugs, risks, and gaps that would cause an incorrect or incomplete implementation. ` +
     `Be concrete — point at the specific plan step or component. If the scope is sound, return ` +
     `an empty findings list.\n\nPlan:\n${plan}`,
-    { label: `find:${s.key}`, phase: 'Find', model: 'sonnet', schema: FIND },
+    { label: `find:${s.key}`, phase: 'Find', model: 'sonnet', effort: 'high', schema: FIND },
   ),
   (review, s) => parallel(
     ((review && review.findings) || []).map((f) => () =>
@@ -125,7 +125,7 @@ const reviewed = await pipeline(
         `"refuted" if you cannot substantiate it from the plan text — an issue nobody can ` +
         `confirm should not drive a plan change.\n\nCandidate: ${JSON.stringify(f)}\n\n` +
         `Plan:\n${plan}`,
-        { label: `verify:${s.key}`, phase: 'Verify', model: 'sonnet', schema: VERDICT },
+        { label: `verify:${s.key}`, phase: 'Verify', model: 'sonnet', effort: 'high', schema: VERDICT },
       ).then((v) => ({ ...f, scope: s.key, verdict: v })),
     ),
   ),
@@ -134,15 +134,23 @@ const reviewed = await pipeline(
 const all = reviewed.flat().filter(Boolean)
 const confirmed = all.filter((x) => x.verdict && x.verdict.status === 'confirmed')
 
-// 4. Score the survivors.
+// 4. Score the survivors. agent() returns null if a scorer dies or is skipped — dereferencing that
+// would throw inside the promise, reject the whole parallel(), and discard every confirmed issue the
+// expensive Find/Verify stages just produced. A dead scorer costs its issue a criticality label, not
+// the run: fall back to 'major' so the issue still reaches the orchestrator, and say the label is
+// unscored rather than pretending it was triaged.
 const issues = (await parallel(
   confirmed.map((c) => () =>
     agent(
       `Score the criticality of this CONFIRMED plan issue as critical, major, or minor, with a ` +
       `one-line justification.\n\n` +
       JSON.stringify({ title: c.title, detail: c.detail, where: c.where, scope: c.scope }),
-      { label: `score:${c.scope}`, phase: 'Score', model: 'haiku', schema: SCORE },
-    ).then((sc) => ({ ...c, criticality: sc.level, justification: sc.justification })),
+      { label: `score:${c.scope}`, phase: 'Score', model: 'haiku', effort: 'low', schema: SCORE },
+    ).then((sc) => ({
+      ...c,
+      criticality: (sc && sc.level) || 'major',
+      justification: (sc && sc.justification) || 'scorer returned no result — defaulted to major, triage this one yourself',
+    })),
   ),
 )).filter(Boolean)
 

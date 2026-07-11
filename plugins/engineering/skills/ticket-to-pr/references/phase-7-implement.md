@@ -82,10 +82,15 @@ editing safe; now it makes the N-way merge trivial. If a cherry-pick *does* conf
 **The cost, stated plainly:** a fresh worktree has none of the project's **gitignored build
 dependencies** (`node_modules`, `.venv`, `target/`), so tests cannot run in it until they're
 provisioned. Pass `worktreeSetup` with the cheapest correct provisioning for the project — usually
-symlinking the main tree's `node_modules`; an install per worktree is the fallback. If a project
-genuinely can't be provisioned cheaply (a heavy native build, no shared package store), set
-`isolation: 'shared'` — and then accept the trade honestly: per-task verification becomes
-best-effort, and the wave gate is the real check.
+symlinking the main tree's `node_modules`; an install per worktree is the fallback.
+
+**There is no "parallel but unisolated" mode, deliberately.** If a project genuinely can't afford a
+worktree per task (a heavy native build, no shared package store), then it can't afford to
+parallelize either — without isolation, concurrent builders race on the one git index and read each
+other's half-written files, which is the exact failure the worktrees exist to prevent. The honest
+fallback is the **sequential path** below: one builder at a time in the main tree, which needs no
+isolation because nothing runs concurrently. You lose the parallelism and keep every guarantee. A
+shared-tree swarm would lose the guarantees and keep the parallelism — the wrong half.
 
 ## The per-task chain
 

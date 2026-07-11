@@ -44,13 +44,17 @@
 //   scriptsDir     string?  — where wave-review-package lives; reviewers fall back to raw git
 //   worktreeSetup  string?  — command run inside each fresh worktree to provision gitignored build
 //                             deps (node_modules, .venv, target/). Without it, tests cannot run.
-//   isolation      'worktree' | 'shared'  — default 'worktree'. 'shared' skips worktrees for
-//                             projects too expensive to provision; per-task verify then becomes
-//                             best-effort and the wave gate is the real check.
 //   constraints    string?  — binding requirements from the plan, handed to every reviewer
 //   planPath       string?  — scene-setting only; the brief is the source of requirements
 //
-// returns: { halted, haltedAtWave, reason, waves:[{wave,tasks,gate}], completed, blocked, minors }
+// There is no shared-tree mode. If a project cannot afford a worktree per task, it cannot afford to
+// parallelize either: without isolation, concurrent builders race on the one index and read each
+// other's half-written files. The honest fallback is the SEQUENTIAL path (one builder at a time in
+// the main tree — see references/phase-7-implement.md), which needs no isolation because nothing runs
+// concurrently. A "parallel but unisolated" mode would be neither.
+//
+// returns: { halted, haltedAtWave, reason, waves:[{wave,tasks,gate}], completed, blocked, minors,
+//            cannotVerify }
 
 export const meta = {
   name: 'implement-waves',
@@ -147,16 +151,33 @@ const waves = graph.waves || []
 const gateCommand = (args && args.gateCommand) || ''
 const scriptsDir = (args && args.scriptsDir) || ''
 const worktreeSetup = (args && args.worktreeSetup) || ''
-const isolation = (args && args.isolation) || 'worktree'
 const constraints = (args && args.constraints) || '(none supplied)'
 const planPath = (args && args.planPath) || ''
 
+const bail = (reason) => ({ halted: true, reason, waves: [], completed: [], blocked: [], minors: [], cannotVerify: [] })
+
 if (!tasks.length || !waves.length) {
-  return { halted: true, reason: 'pass args.graph = { tasks: [...], waves: [[ids]] }', waves: [], completed: [], blocked: [], minors: [] }
+  return bail('pass args.graph = { tasks: [...], waves: [[ids]] }')
 }
 
 const byId = {}
 for (const t of tasks) byId[t.id] = t
+
+// Validate the graph BEFORE spending a single agent. Silently dropping an unresolvable id would mean
+// a task never runs while the wave still gates green and the run still returns halted:false — i.e. a
+// PR that is missing an entire task's implementation, reported as a full success. Refuse instead.
+const scheduled = waves.flat()
+const unknown = scheduled.filter((id) => !byId[id])
+if (unknown.length) return bail(`waves reference task id(s) not in graph.tasks: ${unknown.join(', ')}`)
+
+const dupes = scheduled.filter((id, i) => scheduled.indexOf(id) !== i)
+if (dupes.length) return bail(`task id(s) scheduled in more than one wave: ${[...new Set(dupes)].join(', ')}`)
+
+const unscheduled = tasks.map((t) => t.id).filter((id) => !scheduled.includes(id))
+if (unscheduled.length) return bail(`task(s) in graph.tasks but in no wave: ${unscheduled.join(', ')}`)
+
+const noWrites = tasks.filter((t) => !(t.writes || []).length).map((t) => t.id)
+if (noWrites.length) return bail(`task(s) with an empty write-set (Phase 6 must name one): ${noWrites.join(', ')}`)
 
 const list = (v) => (Array.isArray(v) ? v.join(', ') : v || '—')
 const lines = (v) => (Array.isArray(v) ? v : [v]).filter(Boolean).map((x) => `  - ${x}`).join('\n')
@@ -167,7 +188,19 @@ const bModel = (t) => t.builderModel || 'sonnet'
 const bEffort = (t) => t.builderEffort || 'medium'
 const rModel = (t) => t.reviewerModel || 'sonnet'
 const rEffort = (t) => t.reviewerEffort || 'high'
-const escalate = (m) => (m === 'haiku' ? 'sonnet' : 'opus')   // one tier up, for a retry that must not repeat itself
+
+// A retry must not be able to buy the same failure twice, so it escalates BOTH levers. Model tops out
+// at opus — at which point effort is the only lever left, which is exactly why effort escalates too.
+// (Bumping the model while silently *lowering* effort, as a hardcoded 'high' would do to an
+// opus/xhigh task, hands the hardest tasks in the graph a weaker second attempt than their first.)
+const MODELS = ['haiku', 'sonnet', 'opus']
+const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+const up = (ladder, v, fallback) => {
+  const i = ladder.indexOf(v)
+  return i < 0 ? fallback : ladder[Math.min(i + 1, ladder.length - 1)]
+}
+const escalateModel = (m) => up(MODELS, m, 'opus')
+const escalateEffort = (e) => up(EFFORTS, e, 'high')
 
 const wtPath = (t) => `.ticket-to-pr/wt/${t.id}`
 
@@ -175,19 +208,39 @@ const setupPrompt = (waveNo, waveTasks) => [
   `Prepare isolated workspaces for wave W${waveNo} of a parallel implementation run.`,
   `\nWork from the MAIN repository root. Do this serially, in order — concurrent \`git worktree add\``,
   `calls can race, which is exactly why one agent does all of them.`,
-  `\n## 1. Record the wave base`,
+  `\n## 1. Clear any stale worktrees from a previous run`,
+  `\nA previous run that halted deliberately leaves its worktrees behind as evidence, and their paths`,
+  `are derived from the task ids — so they collide with the ones you are about to create, and`,
+  `\`git worktree add\` would fail with "already exists". Clear them first:`,
+  `\n    git worktree prune`,
+  waveTasks.map((t) => `    git worktree remove --force ${wtPath(t)} 2>/dev/null || true    # ${t.id}`).join('\n'),
+  `\n(Also remove any leftover directory at those paths — \`rm -rf\` — in case a worktree was deleted`,
+  `from git's metadata but its directory survived. It is safe: the work in them is either already`,
+  `committed to the main branch, or was abandoned by the halt that left them.)`,
+  `\n## 2. Record the wave base`,
   `\nRun \`git rev-parse HEAD\` and return it as "base". Every worktree below detaches at it, and the`,
   `reviewers diff against it. It already contains every previous wave's committed work.`,
-  `\n## 2. Create one worktree per task`,
+  `\n## 3. Create one worktree per task`,
   waveTasks.map((t) => `  git worktree add --detach ${wtPath(t)} HEAD    # ${t.id}`).join('\n'),
   worktreeSetup
-    ? `\n## 3. Provision each worktree\n\nA fresh worktree has no gitignored build dependencies (node_modules, .venv, target/), so tests\ncannot run in it until you provision them. In EACH worktree directory, run:\n\n    ${worktreeSetup}\n\nIf that command fails in any worktree, return status "failed" and say which — a builder that\ncannot run its tests is worse than no builder.`
-    : `\n## 3. Provision each worktree\n\nNo setup command was supplied. Check whether the project needs gitignored build dependencies\n(node_modules, .venv, target/) to run its tests. If it does, provision them in each worktree the\ncheapest correct way for this project (symlinking the main tree's node_modules is usually enough;\nan install per worktree is the fallback). If you cannot, return status "failed" and say so rather\nthan handing builders a tree whose tests cannot run.`,
+    ? `\n## 4. Provision each worktree\n\nA fresh worktree has no gitignored build dependencies (node_modules, .venv, target/), so tests\ncannot run in it until you provision them. In EACH worktree directory, run:\n\n    ${worktreeSetup}\n\nIf that command fails in any worktree, return status "failed" and say which — a builder that\ncannot run its tests is worse than no builder.`
+    : `\n## 4. Provision each worktree\n\nNo setup command was supplied. Check whether the project needs gitignored build dependencies\n(node_modules, .venv, target/) to run its tests. If it does, provision them in each worktree the\ncheapest correct way for this project (symlinking the main tree's node_modules is usually enough;\nan install per worktree is the fallback). If you cannot, return status "failed" and say so rather\nthan handing builders a tree whose tests cannot run.`,
   `\n## Report`,
-  `\nReturn the base SHA and the id→path mapping for every worktree you created.`,
+  `\nReturn the base SHA and the id→path mapping for EVERY task listed above. If you could not create`,
+  `or provision one of them, return status "failed" — do not return a partial mapping as "ok".`,
 ].join('\n')
 
-const builderPrompt = (t, waveNo, worktree, priorFailure) => [
+const resetBlock = (worktree, base) => [
+  `\n## FIRST — discard the failed attempt`,
+  `\nYour worktree still contains the previous attempt's edits, and possibly its commits. Building on`,
+  `top of them would put the discarded attempt's code into the diff the reviewer judges and the gate`,
+  `merges. Start from a clean slate:`,
+  `\n    git -C ${worktree} reset --hard ${base}`,
+  `    git -C ${worktree} clean -fd`,
+  `\n(Gitignored build dependencies survive \`clean -fd\`, so your tests will still run.)`,
+].join('\n')
+
+const builderPrompt = (t, waveNo, worktree, priorFailure, base) => [
   `You are implementing exactly one atomic task from an approved, hardened implementation plan.`,
   `Other agents are implementing other tasks of the same plan, in parallel, right now — each in its`,
   `own isolated worktree. You cannot see their work, and they cannot see yours. That is deliberate.`,
@@ -237,8 +290,11 @@ const builderPrompt = (t, waveNo, worktree, priorFailure) => [
   `and the results, TDD evidence (the RED command + failing output and why that failure was expected,`,
   `then the GREEN command + passing output), files changed, self-review findings, concerns.`,
   `\nThen return only the structured result, including the commits you made. Return DONE only if your`,
-  `verify command really passed. **A false DONE is worse than a failure** — the next wave builds on it.`,
-  priorFailure ? `\n## THIS IS A RETRY — the previous attempt failed with:\n${priorFailure}\n\nDiagnose why before you start. Do not simply repeat the same approach.` : '',
+  `verify command really passed AND you committed. **A false DONE is worse than a failure** — the next`,
+  `wave builds on it, and uncommitted work is invisible to the reviewer and to the gate.`,
+  priorFailure
+    ? `\n## THIS IS A RETRY — the previous attempt failed with:\n${priorFailure}\n\nDiagnose why before you start. Do not simply repeat the same approach.${resetBlock(worktree, base)}`
+    : '',
 ].filter(Boolean).join('\n')
 
 const reviewerPrompt = (t, worktree, base) => [
@@ -298,16 +354,22 @@ const reviewerPrompt = (t, worktree, base) => [
   `narration, no closing summary.`,
 ].filter(Boolean).join('\n')
 
-const fixerPrompt = (t, worktree, review, round) => [
+const fixerPrompt = (t, worktree, review, blocking, round) => [
   `A reviewer found issues in task ${t.id} (${t.title}). Fix ALL of them.`,
   `\n## Work from your worktree\n\n    ${worktree}`,
   t.briefPath ? `\nYour requirements (unchanged): ${t.briefPath}` : `\nTask: ${t.brief || t.title}`,
   `\n## Findings to fix — this is the complete list, address every one`,
-  review.specCompliance === 'issues' ? `\n### Spec compliance\n${lines(review.specIssues)}` : '',
-  `\n### Code quality\n${(review.findings || [])
-    .filter((f) => f.severity === 'Critical' || f.severity === 'Important')
-    .map((f) => `  - [${f.severity}${f.planMandated ? ', plan-mandated' : ''}] ${f.where || ''} — ${f.what}${f.fix ? ` → ${f.fix}` : ''}`)
-    .join('\n')}`,
+  review.specCompliance === 'issues' && (review.specIssues || []).length
+    ? `\n### Spec compliance\n${lines(review.specIssues)}`
+    : '',
+  blocking.length
+    ? `\n### Code quality\n${blocking
+        .map((f) => `  - [${f.severity}] ${f.where || ''} — ${f.what}${f.why ? ` (${f.why})` : ''}${f.fix ? ` → ${f.fix}` : ''}`)
+        .join('\n')}`
+    : '',
+  // The reviewer's verdict can be `needs-fixes` with its objections written only in `reasoning`.
+  // Passing it through is what keeps a fixer from being dispatched against an empty findings list.
+  review.reasoning ? `\n### The reviewer's overall assessment\n  ${review.reasoning}` : '',
   `\n## HARD CONSTRAINT — the same write-set as the original task`,
   `\nYou may modify ONLY:\n${lines(t.writes)}`,
   `\n## After fixing`,
@@ -348,12 +410,17 @@ const gatePrompt = (waveNo, waveTasks, base, wts) => [
   `combination. Leave the cherry-picked commits in place for the orchestrator to inspect; do NOT reset`,
   `or force-fix. Do not tear down the worktrees — they are the evidence.`,
   `\n## 3. Only if everything passed: record and tear down`,
+  `\nThis step is BOOKKEEPING, not gating. The wave is already green and its commits are already on the`,
+  `main branch. If something here fails, say so in "output" — but still return status "pass". Failing`,
+  `the wave over a cleanup error would block every downstream wave for work that actually succeeded.`,
   `\nAppend one line per task to \`.ticket-to-pr/progress.md\` (create it if absent):`,
   `\n    W${waveNo} <task-id>: complete (commit <sha7>, review clean)`,
   `\nThat ledger is the run's durable recovery map — it survives a context compaction that the`,
   `orchestrator's memory will not, and the commits it names exist in git regardless.`,
-  `\nThen remove this wave's worktrees:`,
-  waveTasks.map((t) => `  git worktree remove ${wts[t.id]}`).join('\n'),
+  `\nThen remove this wave's worktrees. Use --force: a builder may have left an untracked file behind`,
+  `(a stray coverage report, a scratch log), and a bare \`git worktree remove\` refuses to delete a`,
+  `worktree that has one. Their content is already committed to the main branch, so forcing is safe:`,
+  waveTasks.map((t) => `  git worktree remove --force ${wts[t.id]}`).join('\n'),
   `\nReturn the commits as they now exist on the main branch.`,
 ].join('\n')
 
@@ -366,29 +433,40 @@ async function runTask(t, waveNo, worktree, base) {
   const P = { build: `W${waveNo} build`, review: `W${waveNo} review`, fix: `W${waveNo} fix` }
   const fail = (why, extra) => ({ id: t.id, title: t.title, status: 'failed', problem: why, worktree, ...extra })
 
-  // 1. Build. Retry once, escalated — never re-run the same model on the same failure unchanged.
+  // A NEEDS_* status is not a flaky agent — it is a defect in the graph or the dispatch, and it names
+  // which. Retrying cannot fix either, so classify and hand it straight back to the orchestrator.
+  const classify = (b, extra) => {
+    if (b && b.status === 'NEEDS_OUT_OF_SCOPE_WRITE') {
+      log(`W${waveNo} ${t.id}: needs out-of-scope write — ${b.problem || ''}`)
+      return fail(`needs a write outside its footprint: ${b.problem || ''}`, { status: 'graph-bug', ...extra })
+    }
+    if (b && b.status === 'NEEDS_CONTEXT') {
+      log(`W${waveNo} ${t.id}: needs context — ${b.problem || ''}`)
+      return fail(`needs context the dispatch didn't carry: ${b.problem || ''}`, { status: 'needs-context', ...extra })
+    }
+    return null
+  }
+
+  // 1. Build. Retry once, escalating BOTH model and effort — a retry that repeats the failed attempt's
+  // configuration (or, worse, drops its effort) just buys the same failure twice.
   let build = await agent(builderPrompt(t, waveNo, worktree), {
     label: t.id, phase: P.build, model: bModel(t), effort: bEffort(t), schema: BUILD_RESULT,
   })
 
-  if (build && build.status === 'NEEDS_OUT_OF_SCOPE_WRITE') {
-    // A graph bug, not a flaky agent. Retrying cannot help — only re-graphing can.
-    log(`W${waveNo} ${t.id}: needs out-of-scope write — ${build.problem || ''}`)
-    return fail(`needs a write outside its footprint: ${build.problem || ''}`, { status: 'graph-bug', build })
-  }
-  if (build && build.status === 'NEEDS_CONTEXT') {
-    // The swarm cannot invent the missing context; the orchestrator must supply it and re-dispatch.
-    log(`W${waveNo} ${t.id}: needs context — ${build.problem || ''}`)
-    return fail(`needs context the dispatch didn't carry: ${build.problem || ''}`, { status: 'needs-context', build })
-  }
+  const early = classify(build, { build })
+  if (early) return early
 
   const ok = (b) => b && (b.status === 'DONE' || b.status === 'DONE_WITH_CONCERNS')
   if (!ok(build)) {
     const why = (build && (build.problem || build.summary)) || 'builder returned no result'
-    log(`W${waveNo} ${t.id}: build failed — retrying once on ${escalate(bModel(t))}`)
-    build = await agent(builderPrompt(t, waveNo, worktree, why), {
-      label: `${t.id} (retry)`, phase: P.build, model: escalate(bModel(t)), effort: 'high', schema: BUILD_RESULT,
+    const m = escalateModel(bModel(t))
+    const e = escalateEffort(bEffort(t))
+    log(`W${waveNo} ${t.id}: build failed — retrying once on ${m}/${e}`)
+    build = await agent(builderPrompt(t, waveNo, worktree, why, base), {
+      label: `${t.id} (retry)`, phase: P.build, model: m, effort: e, schema: BUILD_RESULT,
     })
+    const late = classify(build, { build })
+    if (late) return late
     if (!ok(build)) {
       return fail(
         `failed twice.\nattempt 1: ${why}\nattempt 2: ${(build && (build.problem || build.summary)) || 'no result'}`,
@@ -397,6 +475,14 @@ async function runTask(t, waveNo, worktree, base) {
     }
   }
   if (build.status === 'DONE_WITH_CONCERNS') log(`W${waveNo} ${t.id}: done with concerns — ${build.concerns || ''}`)
+
+  // The builder must commit: its worktree is torn down at the gate, and both the reviewer's BASE..HEAD
+  // range and the gate's cherry-pick read commits, not a dirty tree. A DONE with nothing committed
+  // would review as an empty diff (which a reviewer happily approves) and then blow up at the gate as
+  // an unattributable "empty commit set". Catch it here, where it is still one task's problem.
+  if (!(build.commits || []).length) {
+    return fail('builder reported DONE but committed nothing — its work would be invisible to the reviewer and lost at teardown', { build })
+  }
 
   // 2. Review → fix → re-review, until both verdicts come back clean.
   const minors = []
@@ -407,38 +493,71 @@ async function runTask(t, waveNo, worktree, base) {
     })
     if (!review) return fail('reviewer returned no result', { build })
 
-    for (const f of review.findings || []) if (f.severity === 'Minor') minors.push({ task: t.id, ...f })
+    const findings = review.findings || []
+    for (const f of findings) if (f.severity === 'Minor') minors.push({ task: t.id, ...f })
 
-    const blocking = (review.findings || []).filter((f) => f.severity === 'Critical' || f.severity === 'Important')
+    // A plan-mandated finding is the human's call, not a fixer's: the plan explicitly requires the
+    // thing the rubric calls a defect. Dispatching a fix would contradict the plan, and the reviewer
+    // would re-raise it every round until the run halted anyway — two fixers and three reviews spent
+    // to arrive at a question only the human can answer. Ask it now.
+    const planMandated = findings.filter((f) => f.planMandated && f.severity !== 'Minor')
+    if (planMandated.length) {
+      log(`W${waveNo} ${t.id}: plan-mandated finding(s) — halting for the human to adjudicate`)
+      return fail(
+        `the reviewer flagged ${planMandated.length} plan-mandated finding(s) — the plan requires what the review rubric calls a defect. ` +
+        `This is the human's call (present the finding beside the plan text and ask which governs), not a fixer's: ` +
+        planMandated.map((f) => `[${f.severity}] ${f.where || ''} ${f.what}`).join('; '),
+        { status: 'plan-conflict', build, review, minors, planMandated },
+      )
+    }
+
+    const blocking = findings.filter((f) => f.severity === 'Critical' || f.severity === 'Important')
+    const specIssues = review.specCompliance === 'issues' ? (review.specIssues || []) : []
     const clean = review.specCompliance === 'compliant' && review.quality === 'approved' && !blocking.length
 
     if (clean) {
       return {
         id: t.id, title: t.title, status: 'done', worktree, build, review, minors,
-        fixRounds: round, cannotVerify: review.cannotVerify || [],
+        fixRounds: round, cannotVerify: (review.cannotVerify || []).map((c) => ({ task: t.id, item: c })),
       }
     }
-    if (round === MAX_FIX_ROUNDS) {
+
+    // `quality: needs-fixes` with nothing actionable — no blocking findings, no spec issues — means the
+    // reviewer withheld approval without saying what to change. A fixer would get an empty worklist and
+    // the loop would burn every round to reach an empty failure message. Stop now, and say so.
+    if (!blocking.length && !specIssues.length && !review.reasoning) {
       return fail(
-        `review did not converge after ${MAX_FIX_ROUNDS} fix round(s). Outstanding: ` +
-        `${review.specCompliance === 'issues' ? `spec — ${(review.specIssues || []).join('; ')}. ` : ''}` +
-        blocking.map((f) => `[${f.severity}] ${f.where || ''} ${f.what}`).join('; '),
+        `reviewer returned ${review.specCompliance}/${review.quality} but listed no actionable finding, spec issue, or reasoning — nothing to fix`,
         { build, review, minors },
       )
     }
 
+    if (round === MAX_FIX_ROUNDS) {
+      const outstanding = [
+        specIssues.length ? `spec — ${specIssues.join('; ')}` : '',
+        blocking.map((f) => `[${f.severity}] ${f.where || ''} ${f.what}`).join('; '),
+        !blocking.length && !specIssues.length && review.reasoning ? `reviewer: ${review.reasoning}` : '',
+      ].filter(Boolean).join(' | ')
+      return fail(`review did not converge after ${MAX_FIX_ROUNDS} fix round(s). Outstanding: ${outstanding}`, { build, review, minors })
+    }
+
     // ONE fixer with the COMPLETE findings list — never one fixer per finding. Per-finding fixers
     // each rebuild context and re-run suites, and cost more than the tasks they are fixing.
-    log(`W${waveNo} ${t.id}: review round ${round + 1} — ${blocking.length} blocking finding(s), dispatching fixer`)
-    const fix = await agent(fixerPrompt(t, worktree, review, round + 1), {
+    log(`W${waveNo} ${t.id}: review round ${round + 1} — ${blocking.length + specIssues.length} blocking item(s), dispatching fixer`)
+    const fix = await agent(fixerPrompt(t, worktree, review, blocking, round + 1), {
       label: `fix:${t.id} (r${round + 1})`,
       phase: P.fix,
-      model: round === 0 ? bModel(t) : escalate(bModel(t)),
-      effort: round === 0 ? 'high' : 'xhigh',
+      model: round === 0 ? bModel(t) : escalateModel(bModel(t)),
+      effort: round === 0 ? escalateEffort(bEffort(t)) : escalateEffort(escalateEffort(bEffort(t))),
       schema: BUILD_RESULT,
     })
-    if (!fix || fix.status === 'BLOCKED') {
-      return fail(`fixer could not resolve the review findings: ${(fix && fix.problem) || 'no result'}`, { build, review, minors })
+    // The fixer runs under the builder's schema and the builder's write-set, so it can hit the same
+    // walls — and a NEEDS_* answer from it is just as much a graph/dispatch bug. Treating those as a
+    // successful fix would re-review unchanged code and burn the remaining rounds for nothing.
+    const fixEarly = classify(fix, { build, review, minors })
+    if (fixEarly) return fixEarly
+    if (!ok(fix)) {
+      return fail(`fixer could not resolve the review findings: ${(fix && (fix.problem || fix.summary)) || 'no result'}`, { build, review, minors })
     }
   }
 }
@@ -447,11 +566,11 @@ async function runTask(t, waveNo, worktree, base) {
 const waveReports = []
 const completed = []
 const allMinors = []
+const allCannotVerify = []
 
 for (let i = 0; i < waves.length; i++) {
   const waveNo = i + 1
-  const waveTasks = (waves[i] || []).map((id) => byId[id]).filter(Boolean)
-  if (!waveTasks.length) continue
+  const waveTasks = waves[i].map((id) => byId[id])   // every id resolves — validated up front
 
   const stop = (reason, extra) => {
     // A failed task blocks its dependents, and every later wave depends transitively on this one — so
@@ -459,42 +578,56 @@ for (let i = 0; i < waves.length; i++) {
     // that isn't there. The worktrees are deliberately left in place as evidence.
     const blocked = waves.slice(i + 1).flat()
     log(`W${waveNo}: HALT (${reason}) — ${blocked.length} downstream task(s) blocked`)
-    return { halted: true, haltedAtWave: waveNo, reason, waves: waveReports, completed, blocked, minors: allMinors, ...extra }
+    return {
+      halted: true, haltedAtWave: waveNo, reason, waves: waveReports,
+      completed, blocked, minors: allMinors, cannotVerify: allCannotVerify, ...extra,
+    }
   }
 
   // Setup: one agent, serially creating the worktrees — concurrent `git worktree add` can race.
-  let base = ''
+  phase(`W${waveNo} setup`)
+  const setup = await agent(setupPrompt(waveNo, waveTasks), {
+    label: `setup:W${waveNo}`, phase: `W${waveNo} setup`, model: 'sonnet', effort: 'low', schema: SETUP_RESULT,
+  })
+  if (!setup || setup.status !== 'ok' || !setup.base) {
+    waveReports.push({ wave: waveNo, tasks: [], gate: null, setup })
+    return stop('setup-failed', { setup })
+  }
+  const base = setup.base
   const wts = {}
-  if (isolation === 'worktree') {
-    phase(`W${waveNo} setup`)
-    const setup = await agent(setupPrompt(waveNo, waveTasks), {
-      label: `setup:W${waveNo}`, phase: `W${waveNo} setup`, model: 'sonnet', effort: 'low', schema: SETUP_RESULT,
-    })
-    if (!setup || setup.status !== 'ok' || !setup.base) {
-      waveReports.push({ wave: waveNo, tasks: [], gate: null, setup })
-      return stop('setup-failed', { setup })
-    }
-    base = setup.base
-    for (const w of setup.worktrees || []) wts[w.id] = w.path
-    for (const t of waveTasks) if (!wts[t.id]) wts[t.id] = wtPath(t)
-  } else {
-    // Shared-tree mode: no isolation. Per-task verification becomes best-effort (a builder may
-    // observe a sibling's mid-edit state) and the wave gate is the real check. Only choose this
-    // when provisioning a worktree per task is genuinely too expensive for the project.
-    log(`W${waveNo}: shared-tree mode — no per-task isolation`)
-    for (const t of waveTasks) wts[t.id] = '.'
+  for (const w of setup.worktrees || []) wts[w.id] = w.path
+  const missingWt = waveTasks.filter((t) => !wts[t.id]).map((t) => t.id)
+  if (missingWt.length) {
+    // SETUP_RESULT only requires `status`, so an "ok" with a partial (or absent) mapping is schema-valid.
+    // Defaulting the gap to a conventional path would point a builder at a directory that may not exist.
+    waveReports.push({ wave: waveNo, tasks: [], gate: null, setup })
+    return stop('setup-failed', { setup, problem: `setup returned ok but no worktree for: ${missingWt.join(', ')}` })
   }
 
   phase(`W${waveNo} build`)
   log(`W${waveNo}: ${waveTasks.length} task(s) in parallel — ${waveTasks.map((t) => t.id).join(', ')}`)
 
-  const results = (await parallel(waveTasks.map((t) => () => runTask(t, waveNo, wts[t.id], base)))).filter(Boolean)
-  for (const r of results) allMinors.push(...(r.minors || []))
+  const raw = await parallel(waveTasks.map((t) => () => runTask(t, waveNo, wts[t.id], base)))
+  const results = raw.filter(Boolean)
+  for (const r of results) {
+    allMinors.push(...(r.minors || []))
+    allCannotVerify.push(...(r.cannotVerify || []))
+  }
 
+  // parallel() yields a falsy slot for a chain that died or was skipped. Such a task cannot show up in
+  // `failed` (it isn't in `results` at all), so without this reconciliation the wave would look
+  // failure-free, and the gate — which is built from waveTasks — would cherry-pick a task nobody
+  // reviewed. Map the holes back to their tasks and treat them as failures.
+  const dropped = waveTasks.filter((_t, idx) => !raw[idx]).map((t) => t.id)
   const failed = results.filter((r) => r.status !== 'done')
-  if (failed.length) {
-    waveReports.push({ wave: waveNo, tasks: results, gate: null })
-    return stop('task-failed', { failed })
+  if (dropped.length || failed.length) {
+    waveReports.push({ wave: waveNo, tasks: results, gate: null, dropped })
+    return stop('task-failed', {
+      failed: [
+        ...failed,
+        ...dropped.map((id) => ({ id, status: 'dropped', problem: 'agent chain died or was skipped — no result returned' })),
+      ],
+    })
   }
 
   phase(`W${waveNo} gate`)
@@ -509,5 +642,6 @@ for (let i = 0; i < waves.length; i++) {
   log(`W${waveNo}: ${results.length} task(s) built, reviewed, integrated & committed; gate green`)
 }
 
-log(`implement-waves: ${completed.length} task(s) across ${waveReports.length} wave(s), all reviews clean, all gates green`)
-return { halted: false, waves: waveReports, completed, blocked: [], minors: allMinors }
+const unresolved = allCannotVerify.length ? `, ${allCannotVerify.length} unverifiable requirement(s) for you to resolve` : ''
+log(`implement-waves: ${completed.length} task(s) across ${waveReports.length} wave(s), all reviews clean, all gates green${unresolved}`)
+return { halted: false, waves: waveReports, completed, blocked: [], minors: allMinors, cannotVerify: allCannotVerify }
