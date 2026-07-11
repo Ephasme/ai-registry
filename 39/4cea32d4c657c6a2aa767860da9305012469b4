@@ -1,0 +1,55 @@
+plugins/engineering/skills/ticket-to-pr/SKILL.md
+  s_c82f5f155068ca::t_c182a7a8dc6384 6-13,19-23,25-28,39-48,51-54,60-61,71,73-76,80,84-89,107-121,134,136-140,142-143,145-146,150-153,155-158,160-161,165-166,170,173,177-182,185,189-194,197,201-218,220-229,231-234,236-237,239,241-247,249-252,254-255,257-260,262,264-278,282,284,286-289,291-292,295-297,299,301-302,304-305,307,310-317,319,321-324,326-327,333-338
+plugins/engineering/skills/ticket-to-pr/references/phase-0-identify-input.md
+  s_c82f5f155068ca::t_5365128f001dd2 1,32,46,75-77
+plugins/engineering/skills/ticket-to-pr/references/phase-1-understand.md
+  s_c82f5f155068ca::t_cc8191d97994b2 1-62
+plugins/engineering/skills/ticket-to-pr/references/phase-10-code-review.md
+  s_c82f5f155068ca::t_44d9611c0d3a3c 1-58
+plugins/engineering/skills/ticket-to-pr/references/phase-11-fix-findings.md
+  s_c82f5f155068ca::t_48774b7f2da7d2 1-61
+plugins/engineering/skills/ticket-to-pr/references/phase-12-handoff.md
+  s_c82f5f155068ca::t_6dc0b3c3579657 1-58
+plugins/engineering/skills/ticket-to-pr/references/phase-2-plan.md
+  s_c82f5f155068ca::t_4a5a0b4394d589 1-47
+plugins/engineering/skills/ticket-to-pr/references/phase-3-harden.md
+  s_c82f5f155068ca::t_1a04aa684a8f3e 1-54
+plugins/engineering/skills/ticket-to-pr/references/phase-4-handoff-review.md
+  s_c82f5f155068ca::t_6bb33d52492314 1-51
+plugins/engineering/skills/ticket-to-pr/references/phase-5-deep-review.md
+  s_c82f5f155068ca::t_94cef942b485c5 1,3-4,7-17,25,27-38,51-52,54-57,66-69,76-83
+plugins/engineering/skills/ticket-to-pr/references/phase-6-task-graph.md
+  s_c82f5f155068ca::t_ee240274b48820 1-283
+plugins/engineering/skills/ticket-to-pr/references/phase-7-builder-prompt.md
+  s_c82f5f155068ca::t_da72e33a9bc163 1-131
+plugins/engineering/skills/ticket-to-pr/references/phase-7-implement.md
+  s_c82f5f155068ca::t_4a44a085fd08b2 1-202
+plugins/engineering/skills/ticket-to-pr/references/phase-7-reviewer-prompt.md
+  s_c82f5f155068ca::t_ea7445c1744cc7 1-149
+plugins/engineering/skills/ticket-to-pr/references/phase-8-verify.md
+  s_c82f5f155068ca::t_84c5d0992ed383 1-60
+plugins/engineering/skills/ticket-to-pr/references/phase-9-branch-and-pr.md
+  s_c82f5f155068ca::t_fdf37907d942b0 1,3-5,7,9-11,13-16,18-28,32-34,38-39,62,68-72,74,76,78-79
+plugins/engineering/skills/ticket-to-pr/scripts/deep-review.workflow.mjs
+  s_c82f5f155068ca::t_dfeb5a9ed466e7 29-30
+plugins/engineering/skills/ticket-to-pr/scripts/implement-waves.workflow.mjs
+  s_c82f5f155068ca::t_95f978c3156970 1-513
+plugins/engineering/skills/ticket-to-pr/scripts/wave-review-package
+  s_c82f5f155068ca::t_5f4e604298c6d8 1-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "394cea32d4c657c6a2aa767860da9305012469b4",
+  "prompts": {},
+  "sessions": {
+    "s_c82f5f155068ca": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_c82f5f155068ca",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
