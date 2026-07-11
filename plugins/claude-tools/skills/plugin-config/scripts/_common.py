@@ -236,18 +236,33 @@ def credentials_secret_keys(config_dir: Path, full_id: str) -> Optional[List[str
 
         {"pluginSecrets": {"<plugin>@<marketplace>": {"<KEY>": "<wrapped-value>"}}}
 
+    and this file is the *actual* sensitive store, so its contents -- or its
+    total absence -- confidently tell us whether a key is set. On macOS the
+    keychain is the real store; this file may exist for unrelated reasons
+    (e.g. holding only an OAuth login token) or be absent entirely while a
+    plugin's secret still lives safely in the keychain, so nothing read from
+    here can be trusted as a confident answer on that platform.
+
     This returns the list of KEY names present for ``full_id`` -- names only,
     never the values -- so callers can *confirm a sensitive field is actually
     set* rather than guessing. Returns:
 
-      - a list of key names (possibly empty) when the file is present and
-        parseable as JSON with a pluginSecrets map, or
-      - None when the file is absent or unparseable (caller should treat the
-        sensitive store as opaque, e.g. the macOS keychain).
+      - a list of key names (possibly empty, including when the file doesn't
+        exist at all) on non-macOS platforms, where this file is
+        authoritative; or
+      - None when the sensitive store can't be confirmed from here: on macOS,
+        or when .credentials.json exists but isn't parseable JSON (genuinely
+        unreadable, as opposed to simply lacking an entry).
     """
     path = config_dir / ".credentials.json"
+    if not path.is_file():
+        # Absence is only conclusive on the platform where this file is the
+        # actual store -- on macOS the keychain may still hold the value.
+        return None if is_macos() else []
     data = load_json(path)
     if not isinstance(data, dict):
+        return None
+    if is_macos():
         return None
     ps = data.get("pluginSecrets")
     if not isinstance(ps, dict):

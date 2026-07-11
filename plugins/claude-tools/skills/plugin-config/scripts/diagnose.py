@@ -105,9 +105,22 @@ def diagnose_one(config_dir: Path, plugin_id: str) -> dict:
         else:
             if in_settings:
                 status = "set"
+                if in_creds:
+                    warnings.append(
+                        f"a stale value for this key also exists in {store} "
+                        "from when the field was sensitive -- ignored now "
+                        "that it's non-sensitive."
+                    )
             else:
                 status = "unset"
-                warnings.append("not set in settings.json -> currently unset.")
+                if in_creds:
+                    warnings.append(
+                        f"not set in settings.json, but a stale value exists "
+                        f"in {store} from when the field was sensitive -> "
+                        "currently unset (the stale value is ignored)."
+                    )
+                else:
+                    warnings.append("not set in settings.json -> currently unset.")
         fields.append({
             "key": key,
             "sensitive": sensitive,

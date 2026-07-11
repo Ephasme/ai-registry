@@ -102,7 +102,14 @@ def _sops_decrypt(path: Path, sops_bin: str) -> Dict[str, str]:
     return _flat_string_items(data, f"--from-sops {path}")
 
 
-def _load_sops_path(path: Path) -> Dict[str, str]:
+def _load_sops_path(path: Path) -> Tuple[Dict[str, str], List[str]]:
+    """Decrypt one *.sops.json file, or every one in a directory.
+
+    Returns (pool, notes) -- when a directory expands to multiple files that
+    declare the same key, the alphabetically-last file wins and a note is
+    returned, mirroring build_pool()'s merge() behavior for cross-source
+    collisions.
+    """
     sops_bin = shutil.which("sops")
     if not sops_bin:
         sys.exit("error: --from-sops needs the `sops` binary on PATH "
@@ -117,10 +124,14 @@ def _load_sops_path(path: Path) -> Dict[str, str]:
     else:
         sys.exit(f"error: --from-sops {path}: not a file or directory")
     pool: Dict[str, str] = {}
+    notes: List[str] = []
     for f in files:
         for k, v in _sops_decrypt(f, sops_bin).items():
+            if k in pool and pool[k] != v:
+                notes.append(f"{k}: value from {f.name} overrides an earlier "
+                             f"file in --from-sops {path}")
             pool[k] = v
-    return pool
+    return pool, notes
 
 
 def build_pool(args) -> Tuple[Dict[str, str], List[str]]:
@@ -146,7 +157,9 @@ def build_pool(args) -> Tuple[Dict[str, str], List[str]]:
     for f in args.from_json or []:
         merge(f"--from-json {f}", _load_json_file(Path(f).expanduser()))
     for p in args.from_sops or []:
-        merge(f"--from-sops {p}", _load_sops_path(Path(p).expanduser()))
+        sops_pool, sops_notes = _load_sops_path(Path(p).expanduser())
+        notes.extend(sops_notes)
+        merge(f"--from-sops {p}", sops_pool)
     return pool, notes
 
 
@@ -174,14 +187,17 @@ def _declared_keys(config_dir: Path, full_id: str) -> List[str]:
 # Main
 # --------------------------------------------------------------------------- #
 
-def _refresh_marketplaces(config_dir: Path, markets: List[str], dry_run: bool) -> None:
-    claude = shutil.which("claude") or "claude"
+def _refresh_marketplaces(config_dir: Path, markets: List[str], dry_run: bool) -> bool:
+    claude = shutil.which("claude")
+    if not claude and not dry_run:
+        sys.exit("error: `claude` not found on PATH.")
+    claude = claude or "claude"
     env = dict(os.environ, CLAUDE_CONFIG_DIR=str(config_dir))
+    ok = True
     for m in markets:
-        cmd = [claude, "plugin", "marketplace", "update", m]
-        print(f"  $ {' '.join(cmd)}")
-        if not dry_run:
-            subprocess.run(cmd, env=env)
+        if not set_config.refresh_marketplace(claude, m, env, dry_run):
+            ok = False
+    return ok
 
 
 def run_dir(config_dir: Path, pool: Dict[str, str], args) -> dict:
@@ -191,17 +207,23 @@ def run_dir(config_dir: Path, pool: Dict[str, str], args) -> dict:
     if not installed:
         print("  (no matching installed plugins found here)")
         return {"config_dir": str(config_dir), "installed": [], "routes": {},
-                "used_keys": set(), "unfilled": {}}
+                "used_keys": set(), "unfilled": {}, "ok": True}
+
+    ok = True
 
     # Refresh each unique marketplace once (not once per plugin).
     if not args.no_update_marketplace:
         markets = sorted({c.parse_plugin_id(p)[1] for p in installed
                           if c.parse_plugin_id(p)[1]})
-        _refresh_marketplaces(config_dir, markets, args.dry_run)
+        if not _refresh_marketplaces(config_dir, markets, args.dry_run):
+            ok = False
+
+    # Each plugin's declared keys, resolved once and reused below.
+    declared_by_plugin = {p: _declared_keys(config_dir, p) for p in installed}
 
     # Opportunistic env pickup: only declared keys, only if not already pooled.
     if args.env_all:
-        declared_all = {k for p in installed for k in _declared_keys(config_dir, p)}
+        declared_all = {k for keys in declared_by_plugin.values() for k in keys}
         for k in sorted(declared_all):
             if k not in pool and k in os.environ:
                 pool[k] = os.environ[k]
@@ -210,7 +232,7 @@ def run_dir(config_dir: Path, pool: Dict[str, str], args) -> dict:
     used: set = set()
     unfilled: Dict[str, List[str]] = {}
     for full_id in installed:
-        declared = _declared_keys(config_dir, full_id)
+        declared = declared_by_plugin[full_id]
         matched = [k for k in declared if k in pool]
         missing = [k for k in declared if k not in pool]
         if missing:
@@ -220,7 +242,7 @@ def run_dir(config_dir: Path, pool: Dict[str, str], args) -> dict:
         routes[full_id] = matched
         used.update(matched)
         # Reuse set_config's single-plugin writer (marketplace already refreshed).
-        set_config.set_in_dir(
+        wrote_ok = set_config.set_in_dir(
             config_dir, full_id,
             [(k, pool[k]) for k in matched],
             update_marketplace=False,
@@ -228,9 +250,11 @@ def run_dir(config_dir: Path, pool: Dict[str, str], args) -> dict:
             scope=args.scope,
             dry_run=args.dry_run,
         )
+        if not wrote_ok:
+            ok = False
 
     return {"config_dir": str(config_dir), "installed": installed,
-            "routes": routes, "used_keys": used, "unfilled": unfilled}
+            "routes": routes, "used_keys": used, "unfilled": unfilled, "ok": ok}
 
 
 def main(argv: List[str]) -> int:
@@ -300,9 +324,12 @@ def main(argv: List[str]) -> int:
         for pid in sorted(unfilled):
             print(f"  {pid}: {', '.join(sorted(unfilled[pid]))}")
 
+    all_ok = all(r["ok"] for r in results)
     if args.dry_run:
         print("\n(dry run -- nothing was written)")
-    return 0
+    elif not all_ok:
+        print("\n(one or more writes failed -- see '!' lines above)")
+    return 0 if all_ok else 1
 
 
 if __name__ == "__main__":

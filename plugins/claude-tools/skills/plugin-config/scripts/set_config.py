@@ -80,6 +80,27 @@ def _run(cmd: List[str], env: Dict[str, str]) -> int:
     return subprocess.run(cmd, env=env).returncode
 
 
+def refresh_marketplace(
+    claude: str, market: str, env: Dict[str, str], dry_run: bool
+) -> bool:
+    """Run `claude plugin marketplace update <market>`.
+
+    Returns False (after printing a warning) if the update fails, so the
+    installed manifest -- and the sensitive flags it decides storage with --
+    may be stale. Callers may still choose to proceed, but should surface the
+    failure rather than silently trusting a manifest that wasn't refreshed.
+    """
+    cmd = [claude, "plugin", "marketplace", "update", market]
+    print("  $ " + " ".join(cmd))
+    if dry_run:
+        return True
+    rc = _run(cmd, env)
+    if rc != 0:
+        print(f"  ! marketplace update exited {rc} -- manifest may be stale")
+        return False
+    return True
+
+
 def set_in_dir(
     config_dir: Path,
     plugin_id: str,
@@ -103,10 +124,7 @@ def set_in_dir(
     #    the source. Skipped on --no-update-marketplace or when we can't tell the
     #    marketplace name (no @ in the id).
     if update_marketplace and marketplace:
-        mk = [claude, "plugin", "marketplace", "update", marketplace]
-        print("  $ " + " ".join(mk))
-        if not dry_run:
-            _run(mk, env)
+        refresh_marketplace(claude, marketplace, env, dry_run)
     elif update_marketplace and not marketplace:
         print("  (skipping marketplace update: no @marketplace in the plugin id)")
 
