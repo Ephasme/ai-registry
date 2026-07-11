@@ -7,6 +7,13 @@ misses — while the independent verifier keeps plausible-but-wrong findings fro
 The script is **pre-written and bundled** at `scripts/deep-review.workflow.mjs` — don't reassemble
 it inline; run the file.
 
+**Every agent in this fan-out is read-only.** They review a *plan*, and Rule Zero
+([`rule-zero-no-code.md`](rule-zero-no-code.md)) forbids them touching code — the bundled script
+carries the rule block in each of its prompts. On the fallback path below you must paste it in
+yourself: a review subagent with an Edit tool and a confirmed bug in front of it will fix the bug
+unless you tell it not to. Its output is findings; the plan is the only thing that changes, and
+you change it.
+
 ## The trigger — run it, or skip it out loud
 
 - **RUN IF** Phases 3–4 **kept surfacing serious problems** — a steady stream of critical/major
@@ -51,10 +58,9 @@ Workflow({
 If you've already split the plan, pass `args.scopes` as `[{ key, focus }]` to skip the splitter
 (`plan` is still used by the find/verify stages).
 
-**Cost guard.** The run fans out roughly one finder per scope plus a verifier per candidate
-finding. Apply the standard **fan-out cost guard** (SKILL Operating rules): if that would exceed
-**~20 agents**, say the number and confirm with the human before launching. Phase 7's swarm uses
-the same guard — one convention, two phases.
+**Cost guard.** This run fans out to roughly one finder per scope, plus a verifier and a scorer per
+candidate finding — count that up and apply the **fan-out cost guard** (SKILL Operating rules)
+before launching.
 
 ## What it returns, and reconciliation
 

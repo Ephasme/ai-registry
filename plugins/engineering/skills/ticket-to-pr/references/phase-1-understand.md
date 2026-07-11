@@ -18,6 +18,12 @@ original description.
 The ticket describes the system as its author *remembers* it. Go and see how it actually works
 before you believe any of it.
 
+**Read-only, without exception** — this phase is inside the Rule Zero code freeze
+([`rule-zero-no-code.md`](rule-zero-no-code.md)). Exploring means reading, searching, and
+running existing tests to see what they say. It never means "let me just try the change and
+see". If a subagent does the exploring, paste the canonical rule block into its prompt; prefer
+`Explore`, which cannot edit at all.
+
 - Use the **Explore** agent for breadth ("where is rate limiting enforced, and what enforces
   it?"), or search + targeted reads when you already know roughly where to look.
 - Read every file the ticket names, plus the ones it implies: the callers of what you'll

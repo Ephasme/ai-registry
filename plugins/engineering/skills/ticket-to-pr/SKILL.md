@@ -1,16 +1,13 @@
 ---
 name: ticket-to-pr
 description: >-
-  Drive a single ticket or specification from spec all the way to a reviewed pull
-  request — end to end: understand → plan → harden → handoff-review → (conditional
-  deep review) → task graph → implement (parallel, wave by wave) → verify →
-  branch/commit/push/PR → code-review → fix-until-clean → handoff. Use this when the
-  user hands over a unit of work to be taken to completion: a Notion page/ID, a GitHub
-  Issue or Project item, a Linear issue, or a raw written spec (pasted or a file path),
-  and says something like "take this ticket to a PR", "implement NID-123 end to end",
-  "ship this issue", "do this spec and open a PR", or "drive this from spec to merge".
-  It commits, pushes, and opens PRs — outward-facing steps it pauses to confirm before
-  taking unless you pre-authorize hands-off completion.
+  Drive one ticket or spec all the way to a reviewed pull request: understand it, plan it,
+  harden the plan, split it into a task graph, implement it with a parallel builder/reviewer
+  swarm, verify, open the PR, and fix findings until it is clean. Use when the user hands over
+  a unit of work to take to completion — a Notion page/ID, a GitHub Issue or Project item, a
+  Linear issue, or a raw spec (pasted or a file path) — and asks to take it to a PR, ship it,
+  or drive it end to end. It commits, pushes, and opens PRs, pausing to confirm those unless
+  you pre-authorize hands-off completion.
 ---
 
 # ticket-to-pr — from specification to a reviewed PR
@@ -27,20 +24,55 @@ skill exists (`superpowers:writing-plans`, `engineering:plan-hardening`, …), i
 where one is missing, it states and uses a fallback. It runs only when you invoke it
 explicitly — it pushes branches and opens PRs, which must never happen on a guess.
 
+## RULE ZERO — no code before Phase 7 (absolute, overrides everything below)
+
+**No agent — the orchestrator included — writes a line of product code before Phase 7
+(IMPLEMENT).** Phases 0–6 are a **code freeze**; it lifts at Phase 7 and stays lifted for 7–11.
+
+It outranks every other instruction in this skill, and every mode: plan mode or not,
+auto-accept-edits, a hands-off pre-authorization, a subagent that "was only exploring", a fix
+that is one obvious line. Nothing licenses an early edit.
+
+Why it is absolute: this pipeline's whole value is that the plan gets attacked (Phases 3–5) and
+split (Phase 6) *before* anything is built. Code written earlier skipped both — it belongs to no
+task, so no builder owns it, no reviewer reviews it, and no wave gate covers it, and it rides
+into the PR as unreviewed work everyone downstream assumes was vetted. A change you are certain
+of in Phase 3 costs one paragraph in the plan file; the same change smuggled into the tree costs
+the pipeline its guarantees.
+
+**Enforcing it, every run:**
+
+- **Paste the canonical rule block from [`references/rule-zero-no-code.md`](references/rule-zero-no-code.md)
+  verbatim into every subagent you dispatch in Phases 0–6**, whatever its job. Assume no agent
+  knows this rule unless you tell it.
+- **Prefer read-only agents** (`Explore`) for exploration — a tool the agent doesn't have is a
+  rule it cannot break.
+- **If an agent broke the freeze**, revert the edit, say so, and re-enter the change as a plan
+  amendment. It never reaches Phase 7's base commit.
+- **Phase 6 verifies the freeze held** — `git status --porcelain` shows nothing but the plan and
+  the `.ticket-to-pr/` artifacts.
+
+That reference is the single source for what counts as code, the four things you *may* write, and
+what to do when you think you need an exception.
+
 ## At a glance
 
 ```
-0  IDENTIFY INPUT   → which ticket/spec, from where
-1  UNDERSTAND       → read + ground in code; restate; GATE: ask if unclear
-2  PLAN             → writing-plans  (else plan mode)
-3  HARDEN           → plan-hardening, loop-until-clean
-4  HANDOFF REVIEW   → spec-handoff-review, loop-until-clean
-5  DEEP REVIEW      → only if 3–4 kept surfacing serious findings, or asked (multi-agent workflow)
-6  TASK GRAPH       → plan → atomic tasks → dependency DAG → ordered waves; pick each task's
-                      builder + reviewer models
-                      GATE: show the graph before the swarm — last cheap checkpoint
-7  IMPLEMENT        → run the graph wave by wave. Per task: an isolated worktree, a builder, then
-                      an independent reviewer (spec + quality) + fix loop — parallel within a wave
+                     ┌─────────────── CODE FREEZE (Rule Zero) ───────────────┐
+0  IDENTIFY INPUT    │ which ticket/spec, from where                         │
+1  UNDERSTAND        │ read + ground in code; restate; GATE: ask if unclear  │
+2  PLAN              │ writing-plans  (else plan mode)                       │
+3  HARDEN            │ plan-hardening, loop-until-clean                      │
+4  HANDOFF REVIEW    │ spec-handoff-review, loop-until-clean                 │
+5  DEEP REVIEW       │ only if 3–4 kept surfacing serious findings, or asked │
+6  TASK GRAPH        │ atomic tasks → dependency DAG → ordered waves; pick   │
+                     │ each task's builder + reviewer models                 │
+                     │ GATE: show the graph — last cheap checkpoint, and     │
+                     └─ verify the freeze held (working tree clean of code) ─┘
+7  IMPLEMENT      ← ─ ─ the freeze LIFTS here, and only here ─ ─
+                     run the graph wave by wave. Per task: an isolated worktree, a builder,
+                     then an independent reviewer (spec + quality) + fix loop — parallel
+                     within a wave
 8  VERIFY           → build/test/lint must pass, with evidence
 9  PUSH→PR          → GATE: confirm before push & PR; link the ticket
 10 CODE REVIEW      → code-review (working diff) / review (open PR)
@@ -77,7 +109,8 @@ complete. Any other skip is a bug in your execution, not a shortcut.
 
 ## Operating rules (apply to every phase)
 
-These six behaviours recur throughout; internalize them once so each phase stays short.
+These behaviours recur throughout; internalize them once so each phase stays short. **Rule Zero,
+above, outranks every one of them.**
 
 - **Print an exit receipt before advancing.** Every phase ends with one line of the form
   `✅ Phase N (<NAME>) — <which path ran> — <evidence>`, e.g.
@@ -175,7 +208,9 @@ next phase. → [`references/phase-2-plan.md`](references/phase-2-plan.md)
 ## Phase 3 — HARDEN
 
 Verify the plan's claims against the codebase and surface the collateral damage it doesn't
-handle. Fix every critical/major finding and re-run (loop-until-clean).
+handle. Fix every critical/major finding and re-run (loop-until-clean). **"Fix" here means amend
+the plan file — never the code** (Rule Zero); a real defect found in this phase is exactly the
+success case, and it gets written down, not patched.
 
 - **IF `engineering:plan-hardening` is available** → run it on the plan.
 - **ELSE** → do an inline equivalent: re-read the plan adversarially against the code,
@@ -200,6 +235,7 @@ that would let two engineers build incompatible things. Fix all issues; re-run u
 
 Heavier multi-agent scrutiny of the plan — a find → verify → score → reconcile fan-out where
 an independent agent must confirm or refute every candidate finding before it can change the
+plan. Every agent in it is **read-only** (Rule Zero): they return findings, and *you* amend the
 plan. It costs real tokens, so it's gated.
 
 **TRIGGER:** Phases 3–4 **kept surfacing serious problems** — a steady stream of critical/major
@@ -233,10 +269,16 @@ to the human **before the swarm runs**. This is the last cheap checkpoint before
 agents — a bad split is far cheaper to fix here than after they've written code against it. Pause for
 go-ahead unless hands-off completion was pre-authorized; the **fan-out cost guard** applies regardless.
 
-**Exit:** a written task graph with a valid wave ordering (acyclic, footprint-disjoint per wave, both
-models chosen per task). → [`references/phase-6-task-graph.md`](references/phase-6-task-graph.md)
+**Also verify the freeze held.** Phase 6 is the last phase inside the Rule Zero code freeze, so it is
+where the freeze is checked, not merely asserted: `git status --porcelain` must show nothing but the
+plan and the `.ticket-to-pr/` artifacts. Anything else is an early edit — revert it, say so, and fold
+it back in as a plan amendment and a task in this graph.
 
-## Phase 7 — IMPLEMENT
+**Exit:** a written task graph with a valid wave ordering (acyclic, footprint-disjoint per wave, both
+models chosen per task), and a clean freeze check.
+→ [`references/phase-6-task-graph.md`](references/phase-6-task-graph.md)
+
+## Phase 7 — IMPLEMENT  *(the code freeze lifts here — and only here)*
 
 Execute the task graph **wave by wave**, in dependency order. Each task gets its **own git worktree**
 and runs its own chain — **builder → independent task reviewer → (fixer → re-review)\*** — and those

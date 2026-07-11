@@ -120,10 +120,8 @@ worse than a failure**, because the next wave builds on it and the reviewer may 
 
 ## Notes for the orchestrator
 
-- **Never omit the model — or the effort.** An omitted `model` inherits the orchestrator's
-  (Opus 4.8); an omitted `effort` inherits the session's (`xhigh`). Either one silently turns a
-  cheap swarm expensive, and the effort trap is the easier of the two to miss, because the agent
-  still *looks* like it's running on Haiku. Set both, explicitly, on every dispatch.
+- **Fill the two header lines from the graph** — `model` and `effort`, never blank (SKILL Operating
+  rules: an omitted value is not a default, it's the most expensive model on the menu).
 - **The brief is the single source of requirements.** Exact values appear there, not in the
   dispatch prose. Phase 6 writes one brief file per task.
 - **Don't paste history.** A dispatch describes one task. Accumulated "state after waves 1–2"

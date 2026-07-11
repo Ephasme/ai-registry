@@ -10,9 +10,6 @@ written artifact, like the plan, because it is the last thing a human can cheapl
 split costs one conversation to fix here; after the swarm has run, it costs a dozen agents' worth
 of wrong code.
 
-**Terminology:** the pipeline has **phases** (0–12). The task graph has **waves** (W1, W2, …).
-They never share a numbering — "wave 2" always means a dependency level, never a phase.
-
 ---
 
 ## Step 1 — Split into atomic tasks
@@ -148,24 +145,17 @@ task writes them, so nothing parallelizes. Pick one per hub file:
 Decide deliberately per hub file, and write the decision into the artifact — an unnoticed hub file is the
 single most likely way a wave breaks.
 
-### Why a worktree per task
+### The worktree decision Phase 6 owes Phase 7
 
-Disjoint write-sets stop two builders from **writing** the same file. They do not stop task B from
-**reading** a file task A is midway through rewriting. In one shared tree, B's own verify command can fail
-— or worse, *pass* — against a torn state that has nothing to do with B, and B's reviewer would see A's
-unreviewed work. So Phase 7 gives each task its own worktree, detached at the wave's base commit: every
-builder sees the base plus its own work, and nothing else.
+Each task builds in its own git worktree — the reasoning is in
+[`phase-7-implement.md`](phase-7-implement.md#isolation--the-resolved-rule). What Phase 6 must *decide* is
+**`worktreeSetup`**: how to provision a fresh one. It arrives with none of the project's gitignored build
+dependencies (`node_modules`, `.venv`, `target/`), so it cannot run a test until it has them — usually a
+symlink to the main tree's `node_modules`. Record that command in the artifact.
 
-That isolation also lets builders **commit** (a worktree has its own index and HEAD, so parallel commits
-don't race), which gives each reviewer a real `BASE..HEAD` range to review.
-
-**The cost** is that a fresh worktree has none of the project's gitignored build dependencies
-(`node_modules`, `.venv`, `target/`) — so tests can't run in it until they're provisioned. Record in the
-artifact how Phase 7 should provision one (`worktreeSetup`), usually a symlink to the main tree's
-`node_modules`. If the project genuinely can't be provisioned cheaply, say so in the artifact and let
-Phase 7 take its **sequential** path — one builder at a time in the main tree, which needs no isolation
-because nothing runs concurrently. What you must *not* do is keep the parallelism and drop the isolation:
-concurrent builders in one tree race on the git index and read each other's half-written files.
+If the project can't be provisioned cheaply, say so in the artifact and mark the run **sequential**: one
+builder at a time in the main tree, which needs no isolation because nothing runs concurrently. Parallel-
+but-unisolated is not on the menu — it is the one combination that drops the guarantees and keeps the risk.
 
 ## Step 6 — Model selection — two independent axes
 
@@ -190,15 +180,40 @@ They are chosen **independently** — that's the point. Worked examples:
 - *Wire the limiter into the DI container* — mechanical, low risk. → **Haiku builder, Sonnet reviewer.**
 - *The token-bucket algorithm itself* — hard to write, disastrous if wrong. → **Opus both.**
 
-Two rules that aren't negotiable:
+**Reviewers have a mid-tier floor — never Haiku.** Turn count beats token price: a reviewer that misses a
+finding costs a whole extra review round, which costs more than the model you saved on.
 
-- **Reviewers have a mid-tier floor — never Haiku.** Turn count beats token price: a reviewer that misses a
-  finding costs a whole extra review round, which costs more than the model you saved on.
-- **Never omit the model or the effort.** An omitted `model` inherits the orchestrator's (Opus 4.8); an
-  omitted `effort` inherits the session's (`xhigh`). Either silently makes a cheap swarm expensive, and the
-  effort trap is the easier to miss — the agent still *looks* like it's running on Haiku.
+Every task carries **four** values into the graph — `builderModel`, `builderEffort`, `reviewerModel`,
+`reviewerEffort`. Leaving any of them blank is what the model/effort rule (SKILL Operating rules) exists to
+prevent; the graph is where you fill them in, so fill in all four.
 
-## Step 7 — Pre-flight conflict scan
+## Step 7 — Pre-flight conflict scan and freeze check
+
+### The freeze check (Rule Zero's enforcement point)
+
+Phase 6 is the last phase inside the code freeze, so it is where the freeze gets **verified**, not
+just asserted. Run:
+
+```
+git status --porcelain
+```
+
+The working tree must contain **nothing but** the plan file and the `.ticket-to-pr/` artifacts
+(the graph, the briefs, the ledger). Anything else — a source file, a test, a config, a lockfile —
+means an agent broke Rule Zero ([`rule-zero-no-code.md`](rule-zero-no-code.md)) somewhere in
+Phases 0–6.
+
+If it did: **revert those files** (`git restore <file>` / `git checkout -- <file>`), say plainly
+what was reverted and which phase produced it, and fold the change back in where it belongs — as a
+plan amendment, and then as a task in this graph. Do **not** let it ride into Phase 7's base
+commit. An edit that predates the task graph is owned by no task, reviewed by no reviewer, and
+covered by no wave gate; it would enter the PR wearing the pipeline's badge without ever having
+passed through it.
+
+State the result of this check in the artifact and in the receipt. "The tree is clean" is a claim
+you must have actually run the command to make.
+
+### The conflict scan
 
 Before you hand the graph over, scan the plan once for things that will make the swarm fight itself:
 
@@ -251,6 +266,10 @@ T2 → T5   (footprint: both write src/limits/index.ts — serialized)
 Pairwise `writes` intersection is empty within W1, W2 and W3. ✅
 Hub files: `src/limits/index.ts` and `src/container.ts` are owned solely by T5 (W3).
 
+## Freeze check (Rule Zero)
+`git status --porcelain` → only the plan file and `.ticket-to-pr/` artifacts. No code written
+in Phases 0–6. ✅
+
 ## Pre-flight scan
 <conflicts found, or "clean">
 ```
@@ -258,8 +277,8 @@ Hub files: `src/limits/index.ts` and `src/container.ts` are owned solely by T5 (
 ## GATE — show the graph before the swarm
 
 **Surface the task graph and the wave plan to the human before Phase 7 spawns anything.** State the tasks,
-the waves and their widths, the hub-file decisions, the model choices, the pre-flight findings — and the
-**projected agent count**.
+the waves and their widths, the hub-file decisions, the model choices, the pre-flight findings, the
+**freeze-check result** — and the **projected agent count**.
 
 Count it honestly. Per wave: **1 setup + 1 gate**. Per task: **1 builder + 1 reviewer** as the floor, plus
 **2 more per fix round** (a fixer and a re-review, up to 2 rounds) and possibly a build retry.
@@ -279,7 +298,7 @@ run.
   Hands-off pre-authorization covers *not stopping to ask*, not *spending 40 agents without warning*.
 
 **Exit:** a written task graph with a valid wave ordering — acyclic, every task atomic, every wave
-footprint-disjoint, every task's two models chosen.
+footprint-disjoint, every task's two models chosen — and a verified-clean freeze check.
 
 **Exit receipt example:**
-`✅ Phase 6 (TASK GRAPH) — docs/plans/abc-123-rate-limiting.task-graph.md — 9 tasks, 3 waves (1/5/3), footprint check clean, hub src/container.ts owned by T9, ~24 agents projected — approved by human`
+`✅ Phase 6 (TASK GRAPH) — docs/plans/abc-123-rate-limiting.task-graph.md — 9 tasks, 3 waves (1/5/3), footprint check clean, freeze check clean (no code written in 0–6), hub src/container.ts owned by T9, ~24 agents projected — approved by human`

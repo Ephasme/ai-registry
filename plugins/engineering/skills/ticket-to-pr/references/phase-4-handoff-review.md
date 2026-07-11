@@ -42,6 +42,11 @@ Say which path ran.
 Fix all issues; re-run until clean (loop-until-clean, see the SKILL's Operating rules). Stop and
 surface at a plateau instead of grinding.
 
+"Fix" means **edit the plan file** — Rule Zero ([`rule-zero-no-code.md`](rule-zero-no-code.md))
+still holds. Pinning down an ambiguous contract means *writing the signature into the plan*, not
+creating the file that declares it. Paste the canonical rule block into any subagent you dispatch
+here.
+
 As in Phase 3, keep the round-by-round tally of critical/major findings — Phases 3 and 4 together
 supply the evidence for Phase 5's trigger.
 

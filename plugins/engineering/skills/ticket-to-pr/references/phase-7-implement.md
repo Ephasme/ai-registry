@@ -5,6 +5,13 @@ gets its **own isolated git worktree** and runs its own chain — **builder → 
 → re-review)\*** — and those chains run **in parallel** with each other. Finish the wave — every
 task reviewed clean, then integrated, verified and committed — before the next wave starts.
 
+**This is where the Rule Zero code freeze lifts** — and the only place it does. Every line of
+product code in this run is written here, by a builder that owns a task in the approved graph,
+reviewed by an independent reviewer, and covered by a wave gate. That is the whole point of the
+six phases of restraint that precede it: nothing reaches the PR that didn't come through this
+door. (Phases 8–11 stay unfrozen — verification fixes and review fixes are code too — but they
+amend what the swarm built; they don't smuggle in what it never saw.)
+
 The script is **pre-written and bundled** at `scripts/implement-waves.workflow.mjs`, using the same
 `Workflow` machinery Phase 5 uses. Run the file; don't reassemble the fan-out inline.
 
@@ -23,8 +30,10 @@ W2 ─────┼─ T3: worktree → builder → reviewer → [fixer → re
   [`phase-7-reviewer-prompt.md`](phase-7-reviewer-prompt.md)). You lose the parallelism, not the
   discipline — and with one task in flight, worktrees are unnecessary: work in the main tree.
 - **ELSE (no subagent dispatch at all)** → implement the graph yourself, task by task in wave order,
-  running each task's `verify` as you finish it and the gate command at each wave boundary. Say so —
-  a self-reviewed implementation is materially weaker evidence, and the handoff should admit it.
+  running each task's `verify` as you finish it and the gate command at each wave boundary. You are
+  now your own builder, so the [builder contract](phase-7-builder-prompt.md) binds you: test first,
+  inside the write-set, no drive-by refactors. Say so — a self-reviewed implementation is materially
+  weaker evidence, and the handoff should admit it.
 
 Say which path ran.
 
@@ -115,22 +124,12 @@ the task fails, and the halt policy takes over.
 Minor findings never block. They're collected across the run and handed to **Phase 10**, which
 triages which must be fixed before merge. A roll-up nobody reads is a silent discard.
 
-## Model selection — two independent axes
+## Models — the ones Phase 6 didn't choose
 
-The builder's model is chosen by **how hard the task is to write**; the reviewer's by **how bad it
-would be if it were wrong**. These are genuinely different questions, so they get different answers —
-a tiny, trivial diff to the auth guard deserves a cheap builder and an expensive reviewer.
+Every task's builder and reviewer models were chosen at Phase 6 and are carried in the graph
+([the matrix](phase-6-task-graph.md#step-6--model-selection--two-independent-axes)). Dispatch them as
+written. Three model calls belong to *this* phase instead:
 
-The full matrix, the tiers, and worked examples live in
-[`phase-6-task-graph.md`](phase-6-task-graph.md#step-6--model-selection--two-independent-axes) — the graph
-carries `builderModel` / `builderEffort` / `reviewerModel` / `reviewerEffort` per task, decided there
-so the human can see them at the gate.
-
-- **Never omit the model — or the effort.** An omitted `model` inherits the orchestrator's (Opus
-  4.8); an omitted `effort` inherits the session's (`xhigh`). Either silently makes a cheap swarm
-  expensive, and the effort trap is the easier to miss: the agent still *looks* like it's on Haiku.
-- **Reviewers have a mid-tier floor** — never Haiku. Turn count beats token price: a model that
-  misses findings costs a review round, which costs more than the model you saved on.
 - **Retries escalate.** A failed builder is re-dispatched one tier up. Re-running the same model on
   the same failure, unchanged, just buys the same failure twice.
 - **The gate and setup agents are mechanical** — Sonnet, low/medium effort. They run commands and
@@ -138,6 +137,9 @@ so the human can see them at the gate.
 - **Judgment stays with the orchestrator** (Opus 4.8, this session): the graph, the halt decisions,
   ⚠️ items, integration triage, plan-mandated findings. The swarm writes code; you decide what it
   means.
+
+The model/effort rule (SKILL Operating rules) binds all three — an omitted value is not a default, it
+is the most expensive model on the menu.
 
 ## Builder status handling
 
@@ -191,13 +193,6 @@ one line per task: `W2 T3: complete (commit a1b2c3d, review clean)`.
   names exist in git even when your context no longer remembers creating them.
 - The `Workflow` tool's `resumeFromRunId` is the cheap resume (cached agent results, same session);
   the ledger is the durable one (survives anything).
-
-## Scope discipline (every path)
-
-Follow the **existing repo conventions** — match the surrounding code's style, structure, and idioms
-— and keep the diff **scoped to the ticket**. No drive-by refactors, no unrelated cleanups: they make
-review harder, dilute the PR, and are the easiest way for an agent to drift outside its write-set.
-This is in the builder contract; keep it there.
 
 **Exit:** every task in the graph is built, reviewed clean on both verdicts, integrated, and
 committed; every wave gate green.

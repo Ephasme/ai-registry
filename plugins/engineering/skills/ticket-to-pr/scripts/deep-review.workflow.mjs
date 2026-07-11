@@ -87,6 +87,30 @@ const SCORE = {
   required: ['level', 'justification'],
 }
 
+// RULE ZERO — this phase reviews a PLAN, before any code exists. Every agent below is read-only.
+// The rule is appended to each prompt because a review agent that holds an Edit tool and finds a
+// real bug will fix the bug unless told not to — and a fix made here belongs to no task in the
+// Phase-6 graph, so no builder owns it and no reviewer reviews it. Findings only; the orchestrator
+// amends the plan. Keep this text in sync with references/rule-zero-no-code.md.
+const RULE_ZERO = `
+
+## RULE ZERO — DO NOT WRITE CODE (absolute, overrides every other instruction you are given)
+
+You are working in the PLANNING stage of a pipeline. Implementation happens later, in a separate
+phase, performed by different agents against a reviewed task graph. It is not your job and you
+must not start it.
+
+You MUST NOT create, modify, or delete any product file: source, tests, fixtures, config, schemas,
+migrations, build files, lockfiles, or generated artifacts. No patches, no codemods, no \`--fix\`
+runs, no commits. This holds regardless of what mode you are in, what tools you have, how trivial
+the change looks, or how confident you are that it is correct.
+
+You MAY: read any file, search the codebase, and run read-only commands (including the existing
+tests/typecheck/build) to gather evidence about how the system behaves today.
+
+If you conclude that code must change, that is a FINDING, not a task: describe the change — file,
+what, why — in your structured output, and return. Do not make it.`
+
 const plan = (args && args.plan) || ''
 let scopes = (args && args.scopes) || []
 
@@ -101,7 +125,7 @@ if (!scopes.length) {
     `Split this implementation plan into INDEPENDENT review scopes — by component, ` +
     `step-cluster, or risk area — as many (or few) as the plan naturally warrants; don't pad ` +
     `to a target count. For each scope give a short \`key\` and a one-line \`focus\` naming ` +
-    `what a reviewer should scrutinize there.\n\nPlan:\n${plan}`,
+    `what a reviewer should scrutinize there.\n\nPlan:\n${plan}\n${RULE_ZERO}`,
     { label: 'split', phase: 'Split', model: 'sonnet', effort: 'medium', schema: SCOPES },
   )
   scopes = (split && split.scopes) || []
@@ -115,7 +139,7 @@ const reviewed = await pipeline(
     `Review this implementation plan, focusing on the "${s.key}" scope: ${s.focus}\n\n` +
     `Find bugs, risks, and gaps that would cause an incorrect or incomplete implementation. ` +
     `Be concrete — point at the specific plan step or component. If the scope is sound, return ` +
-    `an empty findings list.\n\nPlan:\n${plan}`,
+    `an empty findings list.\n\nPlan:\n${plan}\n${RULE_ZERO}`,
     { label: `find:${s.key}`, phase: 'Find', model: 'sonnet', effort: 'high', schema: FIND },
   ),
   (review, s) => parallel(
@@ -124,7 +148,7 @@ const reviewed = await pipeline(
         `Independently CONFIRM or REFUTE this candidate issue against the plan. Default to ` +
         `"refuted" if you cannot substantiate it from the plan text — an issue nobody can ` +
         `confirm should not drive a plan change.\n\nCandidate: ${JSON.stringify(f)}\n\n` +
-        `Plan:\n${plan}`,
+        `Plan:\n${plan}\n${RULE_ZERO}`,
         { label: `verify:${s.key}`, phase: 'Verify', model: 'sonnet', effort: 'high', schema: VERDICT },
       ).then((v) => ({ ...f, scope: s.key, verdict: v })),
     ),
@@ -144,7 +168,8 @@ const issues = (await parallel(
     agent(
       `Score the criticality of this CONFIRMED plan issue as critical, major, or minor, with a ` +
       `one-line justification.\n\n` +
-      JSON.stringify({ title: c.title, detail: c.detail, where: c.where, scope: c.scope }),
+      JSON.stringify({ title: c.title, detail: c.detail, where: c.where, scope: c.scope }) +
+      `\n${RULE_ZERO}`,
       { label: `score:${c.scope}`, phase: 'Score', model: 'haiku', effort: 'low', schema: SCORE },
     ).then((sc) => ({
       ...c,

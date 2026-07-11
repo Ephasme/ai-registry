@@ -33,10 +33,16 @@ skill's output is missing one, add it.
 - **Risks.** What could go wrong, what's uncertain, what you're assuming. Phases 3–5 hunt here
   first, and anything you flag yourself is a finding they don't have to re-derive.
 
-## Write it down
+## Write it down — and write *only* it
 
 The plan must be a **file**, not a message — Phases 3–5 edit it in place across their
-loop-until-clean rounds, and Phase 6 reads it. Put it wherever the repo keeps plans (check for
+loop-until-clean rounds, and Phase 6 reads it.
+
+The plan file is also the **only** thing this phase writes. Rule Zero
+([`rule-zero-no-code.md`](rule-zero-no-code.md)) is in force: a plan step is a paragraph, never
+a scaffolded file, a stub, an empty test, or a "starter" implementation. If plan mode is off,
+or a plan skill offers to start implementing, that changes nothing — the freeze holds until
+Phase 7. Put it wherever the repo keeps plans (check for
 `docs/plans/`, `.plans/`, or whatever `superpowers:writing-plans` chose); otherwise
 `docs/plans/<ticket-key>-<slug>.md`. Note the path — every later phase refers to it.
 

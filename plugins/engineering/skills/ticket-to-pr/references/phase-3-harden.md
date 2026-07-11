@@ -27,7 +27,13 @@ this worth doing is refusing to accept a claim because it sounds right:
 - **Collateral damage.** For each file the plan touches: who else reads it, who imports it, what
   tests cover it, what the type change ripples into. Migrations, serialized formats, public APIs,
   and anything crossing a process boundary deserve extra suspicion.
-- **Fix what breaks** — amend the plan file itself, don't just note the problem.
+- **Fix what breaks** — **in the plan file**. This is where Rule Zero
+  ([`rule-zero-no-code.md`](rule-zero-no-code.md)) is most tempting to break: hardening's whole
+  job is finding real defects, and a found defect *feels* like something to go fix. It isn't —
+  not yet. "Fix" in this phase means **amend the plan**, never touch the code. A change you make
+  here belongs to no task, so no builder owns it, no reviewer reviews it, and no wave gate covers
+  it. Write the paragraph; the swarm writes the code. If a subagent does the hardening, paste the
+  canonical rule block into its prompt.
 
 ## Loop until clean
 
