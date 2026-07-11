@@ -1,0 +1,21 @@
+plugins/engineering/skills/plan-hardening/SKILL.md
+  s_6b8ae896214945::t_57177f9e05d98d 3,12-13,15,17,19,28-29,31,53,61,65,76-77
+plugins/engineering/skills/spec-handoff-review/SKILL.md
+  s_6b8ae896214945::t_180d6edc921416 3,8,15,19-20,22,24,51,79,121,123,125-126,128,130,132,134,136,138,140-146,148
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "2dc2a22e373a524de2b3cb8ea6fee9c5be73af31",
+  "prompts": {},
+  "sessions": {
+    "s_6b8ae896214945": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_6b8ae896214945",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
