@@ -1,27 +1,27 @@
 ---
 name: spec-handoff-review
-description: Run a single closing structural review of a spec or engineering plan right before it is handed to an implementer, using design-quality lenses (two-implementer divergence, hidden assumptions, failure-mode coverage, invariants, interface contracts, state reachability, coherence, verifiability). Trigger on "final pass", "final hardening", "final review", "last round before implementation", "pre-handoff review", "structural review before handoff", or indirect phrasings like "stress test this once more before I send it", "anything still ambiguous in here", or "what would break if I gave this to an engineer tomorrow" — whenever a spec exists in the conversation and the user signals it is near-final. Distinct from iterative plan-hardening, which verifies claims against code and docs — this skill assumes claim verification is done and instead hunts for ambiguity, missing contracts, unstated assumptions, and unhandled state transitions that would let two competent engineers build incompatible systems.
+description: Run a single closing structural review of a spec right before it is handed to an implementer. Trigger when a spec exists and the user signals it is near-final — "final pass", "last round before implementation", "anything still ambiguous in here", "what would break if I gave this to an engineer tomorrow". Distinct from iterative plan-hardening, which verifies claims against code and docs — this skill assumes claim verification is done and instead hunts for ambiguity, missing contracts, unstated assumptions, and unhandled state transitions that would let two competent engineers build incompatible systems.
 ---
 
 # Spec Handoff Review
 
-This is a **single, closing structural sweep** of a spec or plan, run right before an implementing agent (or engineer) starts building from it. Anything ambiguous, missing, or contradictory that survives this pass ships into the implementation.
+This is a **single, closing structural sweep** of a spec, run right before an implementing agent (or engineer) starts building from it. Anything ambiguous, missing, or contradictory that survives this pass ships into the implementation.
 
 This skill is deliberately different from iterative `plan-hardening`:
 
 - `plan-hardening` verifies claims against code and docs across multiple rounds and stops when no fixes remain.
 - This skill assumes that work has already happened (or isn't the priority right now) and instead probes the spec's **structural integrity** through design-quality lenses. It surfaces the kinds of defects that survive claim-verification: latent ambiguity, hidden assumptions, missing failure paths, unstated invariants.
 
-Both can exist in the same workflow: run `plan-hardening` to convergence, then run `final-plan-hardening` as the closing pass before handoff.
+Both can exist in the same workflow: run `plan-hardening` to convergence, then run this skill as the closing pass before handoff.
 
 ## Guardrails
 
-- **Read-only.** This pass reasons about the spec's text — cross-referencing sections, checking terms against each other, comparing against documentation or established principles when a lens calls for it. It does not run tools, execute code, or perform empirical verification against a live system; that's `plan-hardening`'s job, and it's assumed done by the time this pass starts. If a claim surfaces here that actually needs empirical checking, note it as a finding pointing back to a plan-hardening round rather than trying to verify it yourself.
-- **The spec stays a spec.** Every fix is a textual edit to the spec — a sentence, a section, a definition, a table — or a specific open question for the user. A short pseudo-code snippet is fine when it's the clearest way to pin down an algorithm or a tricky sequencing rule — keep it illustrative (a few lines, non-runnable), not a working implementation. Never insert actual runnable code, diffs, or scripts into the document. The interface signatures used under the Interface/contract lens are a related tool: a one-line `(inputs) -> (outputs) {pre, post}` shape is a specification device, not code.
+- **Read-only.** This pass reasons about the spec's text — cross-referencing sections, checking terms against each other, grepping the document, and fetching official documentation when a lens calls for it. It does not execute code, run builds or tests, or verify against a live system; that's `plan-hardening`'s job, and it's assumed done by the time this pass starts. If a claim surfaces here that needs empirical checking, note it as a finding pointing back to a plan-hardening round rather than verifying it yourself.
+- **The spec stays a spec.** Every fix is a textual edit to the spec — a sentence, a section, a definition, a table — or a specific open question for the user; never runnable code, diffs, or scripts inserted into the document. A short pseudo-code snippet is fine when it's the clearest way to pin down an algorithm or a tricky sequencing rule: a few lines, non-runnable. The interface signatures used under the Interface/contract lens are a related device — a one-line `(inputs) -> (outputs) {pre, post}` shape is a specification tool, not code.
 
-## The plan you're reviewing
+## The spec you're reviewing
 
-Find the actual plan before doing anything else — current conversation, uploaded files, attached docs. If multiple candidates exist, ask the user which one (or which sections) to harden. Do not summarize or reconstruct it from memory; work from the literal text. If nothing is present, ask the user to paste or share it.
+Find the actual spec before doing anything else — current conversation, uploaded files, attached docs. If multiple candidates exist, ask the user which one (or which sections) to review. Work from the literal text, not a reconstruction of it from memory. If nothing is present, ask the user to paste or share it.
 
 If the spec is structured around the convention of distinguishing **hard constraints** from **open proposals** (a common pattern, and one the user may be using), treat those two categories asymmetrically:
 
@@ -48,7 +48,7 @@ This is a non-repetition rule. The point of a final pass is to find what the pri
 
 If there have been no prior rounds, all eight lenses are fair game — pick the two-to-four most relevant to the spec's risk profile (e.g., a spec heavy on state machines pulls state-reachability and invariant; a spec heavy on external integrations pulls failure-mode coverage and interface/contract).
 
-State explicitly which lenses you're using and why, before producing findings. This makes the pass auditable and prevents silent drift back to lenses you've already exhausted.
+State explicitly which lenses you're using and why, before producing findings. This makes the pass auditable and keeps it from drifting back to lenses you've already exhausted.
 
 ## The eight lenses
 
@@ -76,7 +76,7 @@ Each lens is a way of looking at the spec. They overlap, but each has a distinct
 
 **What it catches:** Silent fallthrough on errors. Missing retry / backoff specification. Unhandled timeouts. Partial-write recovery. What state the system is in after a failure. Whether failures are observable.
 
-**How to apply:** Enumerate every external boundary in the spec (HTTP calls, DB writes, tool invocations, file I/O, IPC). For each, locate the spec's handling of: timeout, transient error, permanent error, partial success, malformed response. Silence on any of these is a finding by default. Note: "silence is a finding" is the rule — don't accept "this is obvious" as an answer.
+**How to apply:** Enumerate every external boundary in the spec (HTTP calls, DB writes, tool invocations, file I/O, IPC). For each, locate the spec's handling of: timeout, transient error, permanent error, partial success, malformed response. Silence on any of these is a finding by default — "this is obvious" is not an answer.
 
 ### 4. Invariant
 
@@ -118,34 +118,34 @@ Each lens is a way of looking at the spec. They overlap, but each has a distinct
 
 **How to apply:** For each requirement, propose the test or observation that would falsify it. If you can't, the requirement is unverifiable and is a finding. The proposed fix is usually "rewrite as a measurable statement" rather than "delete".
 
-## Step 3 — Report findings
+## High signal only
 
-For each finding, produce four pieces of information. Don't skip any of them.
+Every finding must be backed by **evidence** — quoted spec text, a cited conflicting section, or official documentation / an established design principle. Preference is not evidence:
+
+- "The spec uses pattern X; I'd prefer pattern Y" is not a finding.
+- "The spec uses pattern X; per [official doc / paper / RFC], pattern X has property Z that conflicts with hard constraint W in section 5" is a finding.
+
+When tempted to raise something on stylistic grounds, either find the evidence or let it go. A finding you can't back, you drop.
+
+If a lens comes up clean, say so and move on. **"No issues found under the coherence lens" is a valid and useful result** — it tells the user that lens was checked and came up clean, which is how they know the pass was thorough. A short, high-signal review is the goal; a long one padded with speculative findings dilutes the critical ones and trains the user to skim.
+
+## Step 3 — Apply each selected lens to exhaustion
+
+Work the lenses one at a time, in the order you named them. For each, follow its **How to apply** across the whole spec — every component for two-implementer, every external boundary for failure-mode, every (state, event) pair for state-reachability. A lens is done when its *How to apply* has been run over the entire spec, not when it has produced its first finding. Finish one lens before starting the next.
+
+## Step 4 — Report findings
+
+For each finding, produce all four of these.
 
 1. **Exact location.** Spec section, heading, or paragraph. Pinpoint, not "somewhere in section 3".
 2. **The lens that surfaced it.** Name the lens explicitly. This makes the pass auditable and helps the user see lens-level coverage at a glance.
-3. **Concrete evidence.** Either: quote the offending text, cite the conflicting section, or reference official documentation / an established design principle (e.g., a specific consistency model, the CAP theorem, a documented behavior of the library being used). **No opinion-only findings.** If you can't back the finding with evidence, drop it.
+3. **Concrete evidence.** Quote the offending text, cite the conflicting section, or reference the documentation / principle (e.g., a specific consistency model, the CAP theorem, a documented behavior of the library being used).
 4. **Severity and proposed fix.** Severity is one of:
    - **Critical** — the spec is wrong, contradictory, or unimplementable as written; implementer cannot proceed without resolving it.
    - **Major** — the spec is implementable but the gap will produce divergent implementations or unhandled failure modes.
    - **Minor** — the spec is implementable; the gap is wording or polish.
 
-   The fix is either a concrete edit to the spec text, or a specific question the spec must answer before handoff. Vague fixes ("clarify section 3") are not acceptable — say what to write or what to ask.
-
-## Meta-rule on challenging design decisions
-
-The user's working convention is that challenges to existing design decisions are welcome only when backed by **scientific evidence or official documentation**, not preference. Honor this strictly.
-
-- "The spec uses pattern X; I'd prefer pattern Y" is not a finding.
-- "The spec uses pattern X; per [official doc / paper / RFC], pattern X has property Z that conflicts with hard constraint W in section 5" is a finding.
-
-When you're tempted to raise something on stylistic or preference grounds, either find the evidence or don't raise it. The skill optimizes for high-signal output; padding with preference-based suggestions reduces signal.
-
-## Padding is a failure mode
-
-If you find nothing under a given lens, say so explicitly and move on. **"No issues found under the coherence lens" is a valid and useful result.** It tells the user that lens was checked and came up clean — which is information they need to know the pass was thorough.
-
-Resist the urge to manufacture findings to fill out the report. A short, high-signal review is the goal. A long review padded with preference-based or speculative findings is worse than a short one — it dilutes the critical findings and trains the user to skim.
+   The fix is either a concrete edit to the spec text, or a specific question the spec must answer before handoff. Say what to write or what to ask — "clarify section 3" is not a fix.
 
 ## Output structure
 
@@ -176,14 +176,3 @@ Produce the report in this order:
 ## Summary
 [Count by severity. Any cross-lens patterns worth naming. Final recommendation: is the spec ready for handoff, or are there critical findings that must be resolved first?]
 ```
-
-## Hard rules recap
-
-- Pick at least two lenses; name them explicitly before producing findings.
-- Don't repeat lenses prior rounds already exhausted (unless you've confirmed there were no prior rounds).
-- Every finding needs evidence — code, cited spec section, or official documentation / established principle.
-- Empty lens results are valid and welcome.
-- Don't pad. Don't raise preference-based findings.
-- Each fix is either a concrete textual edit to the spec (small illustrative pseudo-code is fine) or a specific question it must answer — never actual runnable code, diffs, or scripts inserted into the document.
-- Distinguish hard constraints from open proposals if the spec uses that convention.
-- Stay read-only: this is a text-level review, not empirical verification (that's `plan-hardening`'s job).

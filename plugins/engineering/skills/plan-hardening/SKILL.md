@@ -1,6 +1,6 @@
 ---
 name: plan-hardening
-description: Iteratively review and harden an engineering plan by verifying claims against the codebase and docs using available tools, surfacing failed claims and unhandled collateral damage, then fixing and re-reviewing until no critical or major findings remain. Use when the user asks to harden, review, audit, stress test, verify, sanity check, or "poke holes in" a technical plan, design doc, RFC, ADR, refactor proposal, or migration document — even without the word "plan". Also trigger when handed a step-by-step engineering proposal and asked anything skeptical before implementation. Prefer this over ad-hoc review whenever such a plan exists in the conversation.
+description: Harden an engineering plan against reality — verify every claim it makes against the codebase and the docs, surface the collateral damage it doesn't handle, fix, and re-review until a round finds nothing. Use when the user hands over a plan, design doc, RFC, ADR, refactor proposal, or migration document and asks anything skeptical of it — harden, stress test, poke holes in, sanity check — even without the word "plan". Also when another skill needs a plan verified against code before implementation. For a near-final spec that needs only a structural read (ambiguity, contracts, invariants), prefer spec-handoff-review.
 ---
 
 # Plan Hardening
@@ -9,14 +9,14 @@ Run the plan through rounds of review and fixes until it holds up to reality. Ea
 
 ## Guardrails
 
-- **Stay read-only.** This skill checks a plan against reality, it doesn't build anything. Verification means reading files, grepping the codebase, and consulting documentation — never writing, running, or executing code, scripts, builds, or tests, and never spinning up an environment to observe behavior. Read-only tools are also just faster and safer for this job: a claim you can settle by reading a file in seconds shouldn't turn into a script you write, debug, and run. If confirming a claim would take more than a quick read-only lookup, that's a sign it's beyond this skill's reach — flag it as unverified and route it to Step 2 as a question rather than chasing empirical proof yourself.
-- **The plan stays a plan.** The deliverable is the plan's own text, not a working implementation of it. Fixes are edits to the plan's prose and steps. A short pseudo-code snippet is fine when it's the clearest way to pin down an algorithm, data shape, or tricky sequencing — keep it illustrative (a few lines, non-runnable, no imports/boilerplate/error handling), not a working implementation. Never write actual runnable code, diffs against the target codebase, or verification scripts — if a finding needs more than a few illustrative lines to convey, write a precise plan instruction instead (file, function, expected behavior) so an implementer can act on it later. A hardened plan should read the same way it did before, only more accurate and complete — not accreted with real code blocks, diffs, or scripts.
+- **Read-only.** Verification means reading: open files, grep, fetch docs, run read-only queries — never write or execute code to settle a claim. A claim that needs more than a read-only lookup is beyond this skill's reach: flag it unverified and route it to Step 2 as a question.
+- **The plan stays a plan.** The deliverable is the plan's own text — its prose and its steps — made more accurate and more complete. A few lines of illustrative pseudo-code are fine when that's the clearest way to pin down an algorithm, data shape, or tricky sequencing: non-runnable, no imports, no error handling. Anything longer becomes a plan instruction instead (file, function, expected behavior) for an implementer to act on later.
 
-## Preparing step — Locate the plan
+## Step 0 — Locate the plan
 
-Before doing anything else, identify what plan is being hardened. Look in the current conversation and any uploaded files for a plan, design doc, refactor proposal, RFC, ADR, or migration document. If multiple candidates exist, ask the user which one (or which sections) to harden. If nothing is present, ask the user to share or paste the plan.
+Identify what plan is being hardened. Look in the current conversation and any uploaded files for a plan, design doc, refactor proposal, RFC, ADR, or migration document. If multiple candidates exist, ask the user which one (or which sections) to harden. If nothing is present, ask the user to share or paste the plan.
 
-Do not invent or summarize the plan from memory — work from the actual text.
+Work from the literal text. If the plan is a file, edit it in place; if it arrived as conversation text, write it to a file first and harden that file — the loop needs one artifact to converge on across rounds.
 
 ## Step 1 — Review the plan against reality
 
@@ -25,10 +25,10 @@ Walk the plan and surface findings of two kinds: claims that don't hold up again
 **Verify every claim.** A "claim" is anything assertable: file paths, function names, API behaviors, data shapes, sequencing assumptions, performance numbers, library capabilities, configuration values, current-state descriptions ("X currently does Y"), or causal reasoning ("changing A will fix B"). For each, do exactly one of:
 - **Read the related code** — open files, trace call sites, inspect schemas — when the claim is about the codebase.
 - **Consult official documentation** — fetch the docs page, API reference, or changelog — when the claim is about a third-party library, framework, or platform. Prefer primary sources over blog posts.
-- **Run a read-only query** — grep/search, a check-only linter or type-checker, a read-only DB or API query — when the claim is testable that way without writing or executing new code.
-- **Flag it as an unverified finding for Step 2 to ask about** if you can't verify it with a read-only lookup, or if doing so would require writing/running code, a build, a test suite, or standing up an environment.
+- **Run a read-only query** — grep/search, a check-only linter or type-checker, a read-only DB or API query.
+- **Flag it as an unverified finding** for Step 2 to ask about, when no read-only lookup can settle it.
 
-Capture the source of each verification (file:line, doc URL, search result) as you go so it can be cited in the output. Do not accept a claim because it sounds plausible — plausible-sounding wrong claims are exactly what this loop exists to catch. If you have no verification tools at all, every empirical claim falls into the last bullet and goes to the user.
+Capture the source of each verification (file:line, doc URL, search result) as you go, and cite it in the output — the user shouldn't have to trust you on the verification itself. Judge each claim against its source, never against how plausible it sounds; plausible-sounding wrong claims are exactly what this loop exists to catch. If you have no verification tools at all, every empirical claim falls into the last bullet and goes to the user.
 
 **Assess collateral damage.** For each step in the plan, consider what else it touches and whether the plan handles it:
 - other call sites and consumers
@@ -50,7 +50,7 @@ Rank every finding as **critical**, **major**, or **minor**:
 - **Major** — the plan will technically work but produces a meaningfully worse outcome or leaves significant risk unhandled.
 - **Minor** — wording, polish, nice-to-haves.
 
-For any critical or major finding where there's a real choice to make (tradeoffs, design preferences, scope decisions), ask the user before moving to Step 3. Use a structured question tool when one is available (e.g. `ask_user_input_v0`) — these decisions are typically pick-between-options with tradeoffs, which is what those tools are built for. Gather every open question first and ask them in one round rather than dripping them one at a time. For each, state the finding, the options, and the implication of each option concretely.
+For any critical or major finding where there's a real choice to make (tradeoffs, design preferences, scope decisions), ask the user before moving to Step 3. Use a structured question tool when one is available (`AskUserQuestion` in Claude Code). Gather every open question first and ask them in one round rather than dripping them one at a time. For each, state the finding, the options, and the implication of each option concretely.
 
 Findings with a clear right answer don't need a question — they go straight to Step 3. Minor findings are noted for the final summary but not fixed.
 
@@ -58,11 +58,11 @@ If the user pushes back on a finding, re-verify against the source rather than d
 
 ## Step 3 — Fix critical and major findings
 
-Apply fixes for every critical and major finding from Step 2, incorporating the user's clarifications where given. Fixes are edits to the plan document itself — not code changes to the target codebase, and not scripts written to prove the fix works (see Guardrails). Do not silently make design decisions that should have been triaged as questions in Step 2.
+Apply fixes for every critical and major finding from Step 2, incorporating the user's clarifications where given. Every design decision that had a real choice in it should already have been triaged as a question in Step 2 — fix what the user settled, and raise anything new the same way rather than deciding it silently.
 
 Leave minor findings as-is — they get noted in the final summary, not fixed in the plan.
 
-After applying fixes, list what changed — briefly, e.g. "Plan step 3: corrected file path", "Plan step 5: added rollback section", "Plan step 7: removed, superseded by step 6" — so the user can see the diff at a glance. If no critical or major findings were found this round, this step results in no changes — that's the signal Step 4 uses to stop the loop.
+After applying fixes, list what changed — briefly, e.g. "Plan step 3: corrected file path", "Plan step 5: added rollback section", "Plan step 7: removed, superseded by step 6" — so the user can see the diff at a glance.
 
 ## Step 4 — Stop or loop
 
@@ -73,7 +73,5 @@ If after 3 full rounds critical findings keep emerging, stop the loop and tell t
 
 ## Output style
 
-- Lead with what you found, not what you did. The user cares about the findings first.
-- Show your verification work for non-obvious claims — cite the file and line, doc URL, or search result. Don't ask the user to trust you on the verification itself.
-- When the plan changes, present the full updated plan at the end of each round (or a clearly-marked diff if it's very large). The user shouldn't have to mentally reassemble it from deltas.
-- Be direct about uncertainty. "I couldn't verify X — please confirm" is more useful than a confident guess.
+- Lead with the findings — they're what the user is here for.
+- Present the full updated plan at the end of each round (or a clearly-marked diff if it's very large). The user shouldn't have to mentally reassemble it from deltas.
