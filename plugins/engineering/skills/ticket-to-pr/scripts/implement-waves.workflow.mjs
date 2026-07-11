@@ -145,14 +145,25 @@ const GATE_RESULT = {
   required: ['status', 'command', 'output'],
 }
 
-const graph = (args && args.graph) || {}
+// `args` does not always arrive parsed: some hosts deliver the whole value as a JSON string (and
+// occasionally a doubly-encoded one). Reading `args.graph` off a string yields undefined, so the
+// script would bail as though nothing had been passed at all. Normalize first, accept both shapes.
+const input = (() => {
+  let v = args
+  for (let i = 0; i < 3 && typeof v === 'string'; i++) {
+    try { v = JSON.parse(v) } catch { return {} }
+  }
+  return v && typeof v === 'object' ? v : {}
+})()
+
+const graph = input.graph || {}
 const tasks = graph.tasks || []
 const waves = graph.waves || []
-const gateCommand = (args && args.gateCommand) || ''
-const scriptsDir = (args && args.scriptsDir) || ''
-const worktreeSetup = (args && args.worktreeSetup) || ''
-const constraints = (args && args.constraints) || '(none supplied)'
-const planPath = (args && args.planPath) || ''
+const gateCommand = input.gateCommand || ''
+const scriptsDir = input.scriptsDir || ''
+const worktreeSetup = input.worktreeSetup || ''
+const constraints = input.constraints || '(none supplied)'
+const planPath = input.planPath || ''
 
 const bail = (reason) => ({ halted: true, reason, waves: [], completed: [], blocked: [], minors: [], cannotVerify: [] })
 

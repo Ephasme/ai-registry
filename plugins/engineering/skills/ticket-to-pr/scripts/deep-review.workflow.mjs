@@ -111,8 +111,19 @@ tests/typecheck/build) to gather evidence about how the system behaves today.
 If you conclude that code must change, that is a FINDING, not a task: describe the change — file,
 what, why — in your structured output, and return. Do not make it.`
 
-const plan = (args && args.plan) || ''
-let scopes = (args && args.scopes) || []
+// `args` does not always arrive parsed: some hosts deliver the whole value as a JSON string (and
+// occasionally a doubly-encoded one). Reading `args.plan` off a string yields undefined, so the
+// script would bail as though nothing had been passed at all. Normalize first, accept both shapes.
+const input = (() => {
+  let v = args
+  for (let i = 0; i < 3 && typeof v === 'string'; i++) {
+    try { v = JSON.parse(v) } catch { return {} }
+  }
+  return v && typeof v === 'object' ? v : {}
+})()
+
+const plan = input.plan || ''
+let scopes = input.scopes || []
 
 if (!plan && !scopes.length) {
   return { issues: [], counts: { scopes: 0, found: 0, confirmed: 0 }, error: 'pass args.plan (and/or args.scopes)' }
