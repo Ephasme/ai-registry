@@ -1,0 +1,39 @@
+plugins/engineering/skills/ticket-to-pr/SKILL.md
+  s_b2fd88d9e364f0::t_6b2b19c8cbb56e 4-10,27-57,61-75,112-113,211-213,238,272-276,278-279,281
+plugins/engineering/skills/ticket-to-pr/references/phase-1-understand.md
+  s_b2fd88d9e364f0::t_08cf16373bf8c7 21-26
+plugins/engineering/skills/ticket-to-pr/references/phase-2-plan.md
+  s_b2fd88d9e364f0::t_f48656432b95b0 36,39-45
+plugins/engineering/skills/ticket-to-pr/references/phase-3-harden.md
+  s_b2fd88d9e364f0::t_7ada863cf14a38 30-36
+plugins/engineering/skills/ticket-to-pr/references/phase-4-handoff-review.md
+  s_b2fd88d9e364f0::t_188a3c0822f65f 45-49
+plugins/engineering/skills/ticket-to-pr/references/phase-5-deep-review.md
+  s_b2fd88d9e364f0::t_1812cf4fad92d8 10-16,61-63
+plugins/engineering/skills/ticket-to-pr/references/phase-6-task-graph.md
+  s_b2fd88d9e364f0::t_59cd2a474b1e54 148,150-154,156-158,183-195,197-204,206-216,269-272,280-281,301,304
+plugins/engineering/skills/ticket-to-pr/references/phase-7-builder-prompt.md
+  s_b2fd88d9e364f0::t_d45b5433233700 123-124
+plugins/engineering/skills/ticket-to-pr/references/phase-7-implement.md
+  s_b2fd88d9e364f0::t_4505e88c0c5749 8-14,33-36,127,129-131,141-143
+plugins/engineering/skills/ticket-to-pr/references/rule-zero-no-code.md
+  s_b2fd88d9e364f0::t_243151180c2215 1-99
+plugins/engineering/skills/ticket-to-pr/scripts/deep-review.workflow.mjs
+  s_b2fd88d9e364f0::t_4d69aa918dff96 90-113,128,142,151,171-172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "861e76d1ed85fcd572e3a1793d8fd942b1edba56",
+  "prompts": {},
+  "sessions": {
+    "s_b2fd88d9e364f0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_b2fd88d9e364f0",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
