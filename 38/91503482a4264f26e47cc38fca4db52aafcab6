@@ -1,0 +1,21 @@
+plugins/engineering/skills/ticket-to-pr/scripts/deep-review.workflow.mjs
+  s_a8c36f3da392e7::t_5d01770b649178 114-126
+plugins/engineering/skills/ticket-to-pr/scripts/implement-waves.workflow.mjs
+  s_a8c36f3da392e7::t_43f8ddc9cd5a74 148-159,162-166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "3891503482a4264f26e47cc38fca4db52aafcab6",
+  "prompts": {},
+  "sessions": {
+    "s_a8c36f3da392e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_a8c36f3da392e7",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
