@@ -1,0 +1,25 @@
+plugins/engineering/skills/ticket-to-pr/references/phase-6-task-graph.md
+  s_0d2eaa0299ee1f::t_305ce1eef9bd6b 165-168
+plugins/engineering/skills/ticket-to-pr/references/phase-7-implement.md
+  s_0d2eaa0299ee1f::t_b8419604a28ba2 85-93
+plugins/engineering/skills/ticket-to-pr/scripts/deep-review.workflow.mjs
+  s_0d2eaa0299ee1f::t_e4fa3cba77ff62 105,119,128,137-141,148-153
+plugins/engineering/skills/ticket-to-pr/scripts/implement-waves.workflow.mjs
+  s_0d2eaa0299ee1f::t_788a55594c4d31 50-57,157-158,160,166-181,191-203,211-220,223,226-227,229-240,243,293-297,357,362-372,413-415,420-423,436-451,456-457,462-466,468-469,479-486,496-497,499-515,521,524-528,530,535-543,546-547,550-551,554-560,569,573,581-584,588-596,598-604,610-615,617-621,623-630,645-647
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "b53a82fa175a556d2dc07221e4eaf110bfc89770",
+  "prompts": {},
+  "sessions": {
+    "s_0d2eaa0299ee1f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "s_0d2eaa0299ee1f",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
