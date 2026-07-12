@@ -441,7 +441,10 @@ const gatePrompt = (waveNo, waveTasks, base, wts) => [
 const MAX_FIX_ROUNDS = 2
 
 async function runTask(t, waveNo, worktree, base) {
-  const P = { build: `W${waveNo} build`, review: `W${waveNo} review`, fix: `W${waveNo} fix` }
+  // Static titles so they match meta.phases exactly and group under the same legend entry across
+  // every wave — a wave-numbered title (e.g. "W2 build") would not match "Build" and would render
+  // as its own disconnected progress group instead of updating the declared phase list.
+  const P = { build: 'Build', review: 'Review', fix: 'Fix' }
   const fail = (why, extra) => ({ id: t.id, title: t.title, status: 'failed', problem: why, worktree, ...extra })
 
   // A NEEDS_* status is not a flaky agent — it is a defect in the graph or the dispatch, and it names
@@ -461,7 +464,7 @@ async function runTask(t, waveNo, worktree, base) {
   // 1. Build. Retry once, escalating BOTH model and effort — a retry that repeats the failed attempt's
   // configuration (or, worse, drops its effort) just buys the same failure twice.
   let build = await agent(builderPrompt(t, waveNo, worktree), {
-    label: t.id, phase: P.build, model: bModel(t), effort: bEffort(t), schema: BUILD_RESULT,
+    label: `W${waveNo} ${t.id}`, phase: P.build, model: bModel(t), effort: bEffort(t), schema: BUILD_RESULT,
   })
 
   const early = classify(build, { build })
@@ -474,7 +477,7 @@ async function runTask(t, waveNo, worktree, base) {
     const e = escalateEffort(bEffort(t))
     log(`W${waveNo} ${t.id}: build failed — retrying once on ${m}/${e}`)
     build = await agent(builderPrompt(t, waveNo, worktree, why, base), {
-      label: `${t.id} (retry)`, phase: P.build, model: m, effort: e, schema: BUILD_RESULT,
+      label: `W${waveNo} ${t.id} (retry)`, phase: P.build, model: m, effort: e, schema: BUILD_RESULT,
     })
     const late = classify(build, { build })
     if (late) return late
@@ -499,7 +502,7 @@ async function runTask(t, waveNo, worktree, base) {
   const minors = []
   for (let round = 0; round <= MAX_FIX_ROUNDS; round++) {
     const review = await agent(reviewerPrompt(t, worktree, base), {
-      label: round === 0 ? `review:${t.id}` : `review:${t.id} (r${round + 1})`,
+      label: round === 0 ? `W${waveNo} review:${t.id}` : `W${waveNo} review:${t.id} (r${round + 1})`,
       phase: P.review, model: rModel(t), effort: rEffort(t), schema: REVIEW_RESULT,
     })
     if (!review) return fail('reviewer returned no result', { build })
@@ -556,7 +559,7 @@ async function runTask(t, waveNo, worktree, base) {
     // each rebuild context and re-run suites, and cost more than the tasks they are fixing.
     log(`W${waveNo} ${t.id}: review round ${round + 1} — ${blocking.length + specIssues.length} blocking item(s), dispatching fixer`)
     const fix = await agent(fixerPrompt(t, worktree, review, blocking, round + 1), {
-      label: `fix:${t.id} (r${round + 1})`,
+      label: `W${waveNo} fix:${t.id} (r${round + 1})`,
       phase: P.fix,
       model: round === 0 ? bModel(t) : escalateModel(bModel(t)),
       effort: round === 0 ? escalateEffort(bEffort(t)) : escalateEffort(escalateEffort(bEffort(t))),
@@ -596,9 +599,10 @@ for (let i = 0; i < waves.length; i++) {
   }
 
   // Setup: one agent, serially creating the worktrees — concurrent `git worktree add` can race.
-  phase(`W${waveNo} setup`)
+  // Phase title stays static ('Setup') to match meta.phases; the wave number lives in the label.
+  phase('Setup')
   const setup = await agent(setupPrompt(waveNo, waveTasks), {
-    label: `setup:W${waveNo}`, phase: `W${waveNo} setup`, model: 'sonnet', effort: 'low', schema: SETUP_RESULT,
+    label: `setup:W${waveNo}`, phase: 'Setup', model: 'sonnet', effort: 'low', schema: SETUP_RESULT,
   })
   if (!setup || setup.status !== 'ok' || !setup.base) {
     waveReports.push({ wave: waveNo, tasks: [], gate: null, setup })
@@ -615,7 +619,7 @@ for (let i = 0; i < waves.length; i++) {
     return stop('setup-failed', { setup, problem: `setup returned ok but no worktree for: ${missingWt.join(', ')}` })
   }
 
-  phase(`W${waveNo} build`)
+  phase('Build')
   log(`W${waveNo}: ${waveTasks.length} task(s) in parallel — ${waveTasks.map((t) => t.id).join(', ')}`)
 
   const raw = await parallel(waveTasks.map((t) => () => runTask(t, waveNo, wts[t.id], base)))
@@ -641,9 +645,9 @@ for (let i = 0; i < waves.length; i++) {
     })
   }
 
-  phase(`W${waveNo} gate`)
+  phase('Gate')
   const gate = await agent(gatePrompt(waveNo, waveTasks, base, wts), {
-    label: `gate:W${waveNo}`, phase: `W${waveNo} gate`, model: 'sonnet', effort: 'medium', schema: GATE_RESULT,
+    label: `gate:W${waveNo}`, phase: 'Gate', model: 'sonnet', effort: 'medium', schema: GATE_RESULT,
   })
   waveReports.push({ wave: waveNo, tasks: results, gate })
 
