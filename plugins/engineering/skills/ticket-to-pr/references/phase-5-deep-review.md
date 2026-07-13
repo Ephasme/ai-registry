@@ -19,7 +19,7 @@ you change it.
 - **RUN IF** Phases 3–4 **kept surfacing serious problems** — a steady stream of critical/major
   findings across rounds, saying the plan is genuinely error-prone rather than one-off sloppy —
   **OR** the human asks for a deep review.
-- **ELSE SKIP** straight to Phase 6, and say so in the receipt *with the reason*, e.g.
+- **ELSE SKIP** straight to Phase 6 (IMPLEMENT), and say so in the receipt *with the reason*, e.g.
   `✅ Phase 5 (DEEP REVIEW) — skipped: phases 3–4 surfaced no serious findings`. The skip is
   sanctioned; hiding it is not.
 

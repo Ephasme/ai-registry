@@ -1,9 +1,9 @@
 # Phase 1 — UNDERSTAND
 
 The cheapest phase to get right and the most expensive to get wrong. Everything downstream —
-the plan, the hardening, the task graph, the swarm — compounds whatever you decide here. A
-misread requirement doesn't get caught by a green build; it gets caught by a human at review
-time, after nine agents have implemented it faithfully.
+the plan, the hardening, the implementation — compounds whatever you decide here. A misread
+requirement doesn't get caught by a green build; it gets caught by a human at review time,
+after it's been implemented faithfully.
 
 ## 1. Read the ticket in full
 
@@ -41,7 +41,7 @@ Write it out, concisely:
 - **Acceptance criteria** — how "done" is judged. Each one must be *checkable*: if you can't
   imagine the command or the observation that proves it, it isn't a criterion yet.
 - **Affected components** — files/modules/services you expect to touch. This is the first
-  rough draft of the Phase-6 write-sets, so be concrete.
+  rough draft of the plan's per-task files (Phase 2), so be concrete.
 - **Open questions** — anything ambiguous, missing, or contradictory.
 
 ## GATE — ask, don't invent
@@ -58,7 +58,7 @@ which you'd pick. A precise question gets a precise answer; a vague one gets "ye
 **Do not invent requirements or acceptance criteria to fill a gap.** A confidently wrong
 assumption here is the most expensive error in the whole pipeline. If you must proceed on an
 assumption (the human is away and pre-authorized hands-off completion), then **state it
-explicitly, mark it as an assumption in the plan, and carry it to the Phase-12 handoff** so it
+explicitly, mark it as an assumption in the plan, and carry it to the Phase-11 handoff** so it
 gets reviewed rather than silently shipped.
 
 **Exit:** a written restatement, with the open questions resolved (or explicitly flagged as

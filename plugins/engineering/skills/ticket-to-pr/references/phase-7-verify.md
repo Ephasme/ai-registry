@@ -1,16 +1,14 @@
-# Phase 8 — VERIFY
+# Phase 7 — VERIFY
 
-The wave gates in Phase 7 proved the pieces integrate as they landed. This phase proves the
-**finished change** is green — the full build, the full test suite, the full lint, once, on the
-completed branch. The two are not redundant: the wave gate is a fast typecheck-shaped check run
-many times to stop a broken contract propagating; this is the slow, complete one, run once, because
-it's what the PR claims.
+Phase 6's task reviews were task-scoped, and its finishing step only ran the project's basic
+test command before offering the merge/PR/keep/discard menu. This phase proves the **finished
+change** is green in full — the complete build, the complete test suite, the complete lint, once,
+on the finished branch. That's not redundant with what Phase 6 already ran: no task reviewer ever
+saw the whole codebase, and the finishing step's test run may not include lint or a full build.
 
-There is a specific reason not to trust the wave gates here. Every task's tests passed **inside its
-own worktree**, in isolation, and each wave gate then ran only build/typecheck plus *that wave's*
-touched tests. Nothing so far has run the **whole suite against the whole change**. A test in a
-corner of the repo that no task touched — and that no wave gate thought to run — is exactly what
-this phase exists to catch.
+There is a specific reason not to skip this because Phase 6 "already looked green." A test in a
+corner of the repo that no task touched — and that no task reviewer or the finishing step's quick
+test run thought to check — is exactly what this phase exists to catch.
 
 ## The branch
 
@@ -35,19 +33,20 @@ test.
 ## Evidence, not claims
 
 Paste the command and its real output. "Tests pass" is a claim; `142 passed, 0 failed` under the
-command that produced it is evidence. This output is reused verbatim in the Phase-9 PR body, so
+command that produced it is evidence. This output is reused verbatim in the Phase-8 PR body, so
 capture it properly.
 
 If you find yourself writing a summary of a result you didn't actually read, stop and run it.
 
 ## GATE — red means go back
 
-**If anything is red, go back to Phase 7 and fix it.** Do not proceed to a PR on a broken build.
-Re-open the Phase 7 todo; don't leave it falsely complete.
+**If anything is red, go back to Phase 6 and fix it.** Do not proceed to review on a broken build.
+Re-open the Phase 6 todo; don't leave it falsely complete.
 
-- A failure inside one task's area → fix it (as the orchestrator, or by re-dispatching that task).
-- A failure across a seam between tasks → that's a contract bug; see Phase 7's failure policy, and
-  consider whether the *plan* was wrong (back to Phase 2).
+- **Small and local** (a naming fix, a guard clause, a missed null check) → fix it inline as the
+  orchestrator, re-verify, push.
+- **Anything else** → re-run the affected task through `subagent-driven-development`'s
+  implementer → reviewer loop rather than hand-patching it.
 - **If it can't be made green** — genuinely environmental, a pre-existing failure on the default
   branch, flaky in a way you can demonstrate, or out of scope — **stop and tell the human exactly
   what's failing**, with the output. Say what's yours and what was already broken (check: does it
@@ -57,4 +56,4 @@ Re-open the Phase 7 todo; don't leave it falsely complete.
 **Exit:** build/test/lint green, with the output shown.
 
 **Exit receipt example:**
-`✅ Phase 8 (VERIFY) — ran pnpm build && pnpm test && pnpm lint — build ok, 142 passed / 0 failed, lint clean (output above)`
+`✅ Phase 7 (VERIFY) — ran pnpm build && pnpm test && pnpm lint — build ok, 142 passed / 0 failed, lint clean (output above)`

@@ -20,7 +20,7 @@ this worth doing is refusing to accept a claim because it sounds right:
 
 - **Every factual claim gets checked.** "The handler already validates the tenant id" — go read
   the handler. "Nothing else calls this" — grep for it. A plan step resting on an unverified claim
-  is a step that will fail in the swarm, in parallel, at the least convenient moment.
+  is a step that will fail during implementation, at the least convenient moment.
 - **Every "this won't affect X" gets checked hardest.** Negative claims are where plans lie. Trace
   the callers, the tests that pin current behaviour, the config that depends on the shape you're
   changing.
@@ -31,9 +31,9 @@ this worth doing is refusing to accept a claim because it sounds right:
   ([`rule-zero-no-code.md`](rule-zero-no-code.md)) is most tempting to break: hardening's whole
   job is finding real defects, and a found defect *feels* like something to go fix. It isn't —
   not yet. "Fix" in this phase means **amend the plan**, never touch the code. A change you make
-  here belongs to no task, so no builder owns it, no reviewer reviews it, and no wave gate covers
-  it. Write the paragraph; the swarm writes the code. If a subagent does the hardening, paste the
-  canonical rule block into its prompt.
+  here belongs to no task, so no implementer owns it and no reviewer reviews it. Write the
+  paragraph; Phase 6 writes the code. If a subagent does the hardening, paste the canonical rule
+  block into its prompt.
 
 ## Loop until clean
 
@@ -43,7 +43,7 @@ reducing the serious findings, or the same ones keep resurfacing, stop and surfa
 rather than grinding — a plan that won't converge is telling you something the next round won't
 fix.
 
-Minor/nice-to-have findings don't block; carry them to the Phase-12 handoff.
+Minor/nice-to-have findings don't block; carry them to the Phase-11 handoff.
 
 ## Feeding Phase 5
 

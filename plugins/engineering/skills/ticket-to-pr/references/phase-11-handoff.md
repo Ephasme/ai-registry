@@ -1,4 +1,4 @@
-# Phase 12 — HANDOFF
+# Phase 11 — HANDOFF
 
 Close the loop with the human. They handed you a ticket and walked away; this is the artifact they
 come back to. Write it so they can pick the work up cold — what shipped, where it is, and what you
@@ -11,7 +11,7 @@ left for them.
 
 **Built:** <what shipped, mapped to the acceptance criteria — criterion by criterion>
 **PR:** <url> — <state: checks green? review clean?>
-**Verification:** <build/test/lint result from Phase 8, plus the Phase-11 re-verify>
+**Verification:** <build/test/lint result from Phase 7, plus the Phase-10 re-verify>
 **Left for you:**
 - <deferred decisions / open questions you resolved by assumption — flag them>
 - <review findings you disagreed with, and why>
@@ -30,7 +30,7 @@ trustworthy. Anything that a human would be annoyed to discover later belongs in
   proceed on a stated assumption under hands-off pre-authorization — this is where that debt comes
   due). These are the highest-value line items in the whole handoff: they're the decisions a human
   made *implicitly* by not being there.
-- **Plateaus.** Anything a loop stopped on without converging (Phases 3, 4, 11).
+- **Plateaus.** Anything a loop stopped on without converging (Phases 3, 4, 10).
 - **Disagreements.** Review findings you chose not to act on, with your reasoning, so the human can
   overrule you.
 - **Scope calls.** Things you consciously left out, and why.
@@ -55,4 +55,4 @@ confidently broken PR is not.
 **Exit:** the summary is delivered. Done.
 
 **Exit receipt example:**
-`✅ Phase 12 (HANDOFF) — summary posted — PR #456 green & review-clean; 2 minors + 1 assumption (tenant-vs-key keying) flagged for review`
+`✅ Phase 11 (HANDOFF) — summary posted — PR #456 green & review-clean; 2 minors + 1 assumption (tenant-vs-key keying) flagged for review`

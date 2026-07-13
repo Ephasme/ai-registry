@@ -29,7 +29,7 @@ artifact the user pointed at**. If nothing identifies a work item, **ask** which
   blocks or linked pages that carry requirements. Follow links the ticket leans on.
 - **Fallback (no Notion MCP — the common case here):** Notion pages need auth, so you can't
   fetch them blind. Ask the user to **paste the ticket content** (or export it to a file you
-  can read). Don't guess at a page you can't see. Note the ticket id regardless — Phase 9 needs
+  can read). Don't guess at a page you can't see. Note the ticket id regardless — Phase 8 needs
   it for the `[NID-123]` PR-title prefix.
 
 ## GitHub Issue or Project item
@@ -43,7 +43,7 @@ artifact the user pointed at**. If nothing identifies a work item, **ask** which
 - **Fallback:** if the GitHub MCP isn't connected, use the **`gh` CLI**
   (`gh issue view <n> --repo <org>/<repo> --comments`). If neither is available, ask the user
   to paste the issue.
-- Note the `<org>/<repo>` and issue number — Phase 9 links the PR back with `Closes #<n>`.
+- Note the `<org>/<repo>` and issue number — Phase 8 links the PR back with `Closes #<n>`.
 
 ## Linear issue
 

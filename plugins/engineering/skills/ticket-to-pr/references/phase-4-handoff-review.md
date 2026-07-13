@@ -2,10 +2,10 @@
 
 Phase 3 asked "is the plan *true*?" This phase asks "is the plan *unambiguous*?" — a plan can be
 perfectly accurate about the codebase and still be built two incompatible ways by two competent
-engineers. That's the failure this phase exists to catch, and it matters more here than in a
-normal pipeline: **Phase 7 hands atomic tasks to independent agents who cannot ask each other
-what a term meant.** Ambiguity that a single sequential implementer would silently resolve
-becomes, in a swarm, two halves of a feature that don't fit together.
+engineers. That's the failure this phase exists to catch: Phase 6 hands each task to a fresh
+implementer with no memory of the other tasks' work. Ambiguity that one engineer holding the
+whole plan in their head would silently resolve consistently becomes, task by task, two halves
+of a feature that don't fit together.
 
 ## The branch
 
@@ -22,9 +22,9 @@ Say which path ran.
   and build incompatible things? If yes, the step is under-specified. This is the master lens —
   the others are ways of finding instances of it.
 - **Interface contracts.** Every boundary the plan creates — a function signature, an endpoint, a
-  payload, a table — must be pinned down: names, types, nullability, error shape. In Phase 6 these
-  contracts become the DAG's edges; an unnamed contract is an edge you can't draw, and a task that
-  can't be scheduled.
+  payload, a table — must be pinned down: names, types, nullability, error shape. A later task's
+  implementer trusts an earlier task's contract without re-deriving it; an unpinned contract means
+  it can't.
 - **Hidden assumptions.** What is the plan taking for granted that it never says? Ordering,
   idempotency, "there's only ever one of these", "this is always called after auth".
 - **Failure-mode coverage.** What does each step do when the thing it depends on fails, is
@@ -34,8 +34,8 @@ Say which path ran.
   them.
 - **State reachability.** If the change introduces states, can every state be reached and left?
   Are there states the plan creates but never handles?
-- **Verifiability.** Can each step be proven done? A step with no test is a task with no
-  self-verification — and self-verification is what makes a task atomic in Phase 6.
+- **Verifiability.** Can each step be proven done? A step with no test is a task Phase 6's
+  implementer can't check done on its own.
 
 ## Loop until clean
 
