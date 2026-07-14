@@ -1,6 +1,6 @@
 {
   "name": "research",
-  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), automate a real headless Chromium browser (Playwright) for JS-heavy or interactive pages, and run BrightData's full scraping toolkit — web search, structured web-data feeds, a scraping browser, and the Web Unlocker (for pages that block ordinary scraping: 403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) — through the Bright Data MCP (brightdata). Supply an Exa API key to enable web search; supply Cloudflare Access credentials to enable Playwright and the Bright Data MCP.",
+  "description": "Find information and verify it before trusting it — search the live web with Exa, answer only from citable official sources or refuse (cite-or-refuse), rule every factual claim in a document VALID / INVALID / INCONCLUSIVE with sources (fact-check-document), automate a real headless Chromium browser (Playwright) for JS-heavy or interactive pages, run BrightData's full scraping toolkit — web search, structured web-data feeds, a scraping browser, and the Web Unlocker (for pages that block ordinary scraping: 403/429, Cloudflare, CAPTCHA, geo-restriction, JS-only) — through the Bright Data MCP (brightdata), and reach the whole Apify Store of pre-built scrapers (\"Actors\") for social media, e-commerce, search engines, maps and travel sites, discovering and running any of them on demand (apify). Supply an Exa API key to enable web search; supply Cloudflare Access credentials to enable Playwright and the Bright Data MCP; supply an Apify API token to enable Apify.",
   "author": { "name": "Loup Peluso" },
   "userConfig": {
     "EXA_API_KEY": {
@@ -29,6 +29,12 @@
       "type": "string",
       "title": "Bright Data — CF Access Client Secret",
       "description": "CF-Access-Client-Secret for brightdata.loup-peluso.com. Stored in your system keychain; maintainer copy SOPS-encrypted in secrets/cloudflare-access.sops.json.",
+      "sensitive": true
+    },
+    "APIFY_API_TOKEN": {
+      "type": "string",
+      "title": "Apify API Token",
+      "description": "Personal API token for the Apify Store (https://console.apify.com/settings/integrations), sent as the Authorization: Bearer header to the hosted MCP at https://mcp.apify.com/. Grants discovery and execution of any Actor in the store, billed to your Apify account. Stored in your system keychain, never written to the repo; maintainer copy is SOPS-encrypted in secrets/apify.sops.json.",
       "sensitive": true
     }
   }

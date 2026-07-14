@@ -13,7 +13,7 @@ bundles the fact-checking skills together with Exa web search).
 | Plugin | Purpose | What's inside |
 |---|---|---|
 | **engineering** | Build & ship software | skills: `writing-technical-specs`, `plan-hardening`, `spec-handoff-review`, `code-quality-scan`, `document-codebase`, `update-documentation`, `prune-branches` · MCP: GitHub |
-| **research** | Find & verify information | skills: `cite-or-refuse`, `fact-check-document` · MCP: Exa web search |
+| **research** | Find & verify information | skills: `cite-or-refuse`, `fact-check-document` · MCP: Exa web search, Playwright, Bright Data, Apify |
 | **communication** | Reach people | MCP: Slack, WhatsApp (wacli) |
 | **workspace** | Email, calendar, files | MCP: Google Workspace ×3 (perso / work / cassandra) |
 | **navigation** | Places & directions | MCP: Google Maps |
@@ -23,8 +23,9 @@ bundles the fact-checking skills together with Exa web search).
 
 The `communication`, `workspace`, and `navigation` servers are self-hosted behind Cloudflare
 Access; they share one service token, kept once in `secrets/cloudflare-access.sops.json` and
-symlinked into each plugin. `research` (Exa) uses `secrets/exa.sops.json`. Both are
-SOPS-encrypted — the plaintext never touches the repo.
+symlinked into each plugin. `research` uses `secrets/exa.sops.json` (Exa) and
+`secrets/apify.sops.json` (Apify). All are SOPS-encrypted — the plaintext never touches the
+repo; at install time the values land in your system keychain via `userConfig`.
 
 ## Install
 
