@@ -1,0 +1,27 @@
+plugins/research/.mcp.json
+  s_508fb637a78d11::t_8ce495841a921e 25-31
+README.md
+  s_508fb637a78d11::t_92fdf5397be34a 16
+  s_508fb637a78d11::t_48cf1ee0dc8d67 26-28
+plugins/research/.claude-plugin/plugin.json
+  s_508fb637a78d11::t_f40bf4255731ad 3
+  s_508fb637a78d11::t_b7337be05718fc 33-38
+secrets/apify.sops.json
+  s_508fb637a78d11::t_901a13fdfcc876 1-15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "246165386cdaaad1f83159185f07ac2d01be2e56",
+  "prompts": {},
+  "sessions": {
+    "s_508fb637a78d11": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ca4b5d78-1a23-4d14-8a3c-8ebb426a786e",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
