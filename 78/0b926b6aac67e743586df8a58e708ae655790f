@@ -1,0 +1,25 @@
+plugins/engineering/skills/ticket-to-pr/SKILL.md
+  s_4b5a572df3368a::t_27c64d106709e2 85-86
+  s_4b5a572df3368a::t_7bad4f20e3dfe1 64
+  s_4b5a572df3368a::t_281c955097f163 192-222
+  s_4b5a572df3368a::t_837c1dd2b68f1c 225-226
+  s_4b5a572df3368a::t_9843166d219980 97-98
+plugins/engineering/skills/ticket-to-pr/references/phase-1.5-brainstorm.md
+  s_4b5a572df3368a::t_f5060cb123cd08 1-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.13",
+  "base_commit_sha": "780b926b6aac67e743586df8a58e708ae655790f",
+  "prompts": {},
+  "sessions": {
+    "s_4b5a572df3368a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b5ccbdda-386a-4f44-943f-d37322c00ff5",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
