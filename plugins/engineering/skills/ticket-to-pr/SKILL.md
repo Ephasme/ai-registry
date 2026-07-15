@@ -18,11 +18,12 @@ until the PR is clean — then hand it back with a summary. The value is in the 
 phases*: each step refuses to advance on a shaky foundation, so a misread requirement or a red
 test never silently rides through to a merged PR.
 
-This skill orchestrates other skills rather than reimplementing them. Where a specialist
-skill exists (`superpowers:writing-plans`, `engineering:plan-hardening`,
-`superpowers:subagent-driven-development`, …), it delegates; where one is missing, it states
-and uses a fallback. It runs only when you invoke it explicitly — it pushes branches and opens
-PRs, which must never happen on a guess.
+This skill **owns** the phases at the heart of the pipeline — planning (Phase 2), the per-task
+build loop (Phase 6), and verification (Phase 7) are procedures it carries inline, with no
+dependency on any external plugin. Where a specialist *review* skill exists
+(`engineering:plan-hardening`, `engineering:spec-handoff-review`, `/code-review`, `/review`), it
+still delegates and states a fallback if that skill is absent. It runs only when you invoke it
+explicitly — it pushes branches and opens PRs, which must never happen on a guess.
 
 ## RULE ZERO — no code before Phase 6 (absolute, overrides everything below)
 
@@ -62,14 +63,14 @@ what to do when you think you need an exception.
 0  IDENTIFY INPUT     │ which ticket/spec, from where                            │
 1  UNDERSTAND         │ read + ground in code; restate; GATE: ask if unclear     │
 1.5 BRAINSTORM        │ if design space is open: brainstorm (else skip)         │
-2  PLAN               │ writing-plans  (else plan mode)                         │
+2  PLAN               │ write the plan (plan mode): header, tasks, contracts     │
 3  HARDEN             │ plan-hardening, loop-until-clean                        │
 4  HANDOFF REVIEW     │ spec-handoff-review, loop-until-clean                   │
 5  DEEP REVIEW        │ only if 3–4 kept surfacing serious findings, or asked   │
                       └───────────────────────────────────────────────────────────┘
 6  IMPLEMENT      ← ─ the freeze LIFTS here, and only here ─ ─
-                      subagent-driven-development's per-task loop only: fresh implementer per
-                      plan task, an independent task reviewer after each — stops there
+                      owned per-task loop: fresh implementer per plan task, an independent
+                      task reviewer after each — stops there
 7  VERIFY             → build/test/lint must pass, with evidence
 8  PR                 → GATE: confirm before push & PR; link the ticket
 9  CODE REVIEW        → code-review (working diff) / review (open PR)
@@ -110,7 +111,7 @@ above, outranks every one of them.**
   `✅ Phase N (<NAME>) — <which path ran> — <evidence>`, e.g.
   `✅ Phase 7 (VERIFY) — ran pnpm test+lint+build — 142 passed, 0 failed (output above)`, or
   `✅ Phase 5 (DEEP REVIEW) — skipped: phases 3–4 surfaced no serious findings`, or
-  `✅ Phase 6 (IMPLEMENT) — subagent-driven-development (per-task loop only), 7 tasks, all clean`.
+  `✅ Phase 6 (IMPLEMENT) — owned per-task loop, 7 tasks, all reviewed clean`.
   The receipt names the branch you took (skill vs fallback, run vs skip) and points at the
   concrete evidence that the phase's stated **Exit** condition is met. No receipt → the phase
   isn't done → you may not move on. This is what makes a skipped step impossible to hide.
@@ -133,8 +134,8 @@ above, outranks every one of them.**
 
 - **Fan-out cost guard — more than ~20 agents, confirm first.** Two phases can spend a lot of
   agents: **Phase 5** (a reviewer per scope + a verifier per finding, via `Workflow`) and
-  **Phase 6** (an implementer and an independent task reviewer per plan task, via
-  `subagent-driven-development`'s per-task loop — budget `2T` at the floor, `~3T` in practice for
+  **Phase 6** (an implementer and an independent task reviewer per plan task, via its owned
+  per-task loop — budget `2T` at the floor, `~3T` in practice for
   `T` tasks). Invoking this skill opts you into multi-agent work in general, but a big fan-out
   costs real tokens: if a run would spawn **more than ~20 agents**, say the number and **confirm
   with the human before launching**. (The runtime also caps concurrency and total agents, but
@@ -142,10 +143,10 @@ above, outranks every one of them.**
 
 - **Always set a subagent's model *and* effort — where you're the one dispatching.** An
   omitted `model` inherits the orchestrator's (Opus 4.8); an omitted `effort` inherits the
-  session's (`xhigh`). This binds Phase 5's dispatches and Phase 6's ELSE-fallback dispatches
-  (no `subagent-driven-development` available). It does **not** bind Phase 6's primary path —
-  that skill picks its own implementer/reviewer models per its own Model Selection section;
-  don't second-guess it.
+  session's (`xhigh`). This binds Phase 5's dispatches and Phase 6's per-task loop — which this
+  skill now owns, so *you* pick each implementer's and reviewer's model per Phase 6's Model
+  Selection section (mechanical tasks cheap, judgment tasks standard). Set it explicitly every
+  time; the default is the most expensive model.
 
 - **Confirm before anything irreversible or outward-facing.** Pushing a branch, opening a
   PR, and posting review comments leave your fingerprints on shared infrastructure. Pause
@@ -225,13 +226,13 @@ skip. → [`references/phase-1.5-brainstorm.md`](references/phase-1.5-brainstorm
 Turn the understanding — and the approach chosen in Phase 1.5, if it ran — into a concrete,
 ordered implementation plan: numbered tasks, the files each touches, the tests, and the risks.
 
-- **IF `superpowers:writing-plans` is available** → use it; it produces a structured,
-  reviewable plan with `### Task N` sections — the shape Phase 6 reads directly.
-- **ELSE** → enter plan mode and write an equivalent plan yourself, using `### Task N: <title>`
-  headings.
+Write it yourself in plan mode (Rule Zero — no code), to the structure Phase 6 reads directly: a
+header with a **Global Constraints** block, numbered `### Task N` sections carrying per-task files,
+named contracts, and TDD steps, with no placeholders. The Global Constraints block is load-bearing —
+Phase 6 hands it to every task reviewer verbatim.
 
-**Exit:** a written plan file exists — a plan file, or a plan-mode artifact you can hand to the
-next phase. → [`references/phase-2-plan.md`](references/phase-2-plan.md)
+**Exit:** a written plan file exists, with the header, Global Constraints, and `### Task N` sections.
+→ [`references/phase-2-plan.md`](references/phase-2-plan.md)
 
 ## Phase 3 — HARDEN
 
@@ -281,18 +282,17 @@ Subject to the **fan-out cost guard** (Operating rules).
 
 ## Phase 6 — IMPLEMENT  *(the code freeze lifts here — and only here)*
 
-Hand the hardened, reviewed plan to `superpowers:subagent-driven-development`'s **per-task loop
-only**: a fresh implementer per plan task, an independent task reviewer (spec compliance + code
-quality) after each. One task in flight at a time; no worktree-per-task swarm, no task graph, no
-wave gates. **Stop once the last task's review comes back clean** — do not let it continue into
-its own final whole-branch review or `finishing-a-development-branch`; Phases 7–11 of *this*
-skill own verification, the PR, the whole-branch review, and the handoff.
+Run the plan through this skill's **owned per-task loop**: a fresh implementer per plan task, an
+independent task reviewer (spec compliance + code quality) after each, a fix loop until that task
+is clean, then the next. One task in flight at a time; no worktree-per-task swarm, no task graph,
+no wave gates. **Stop once the last task's review comes back clean** — no whole-branch review and
+no merge/PR/discard menu here; Phases 7–11 of *this* skill own verification, the PR, the
+whole-branch review, and the handoff.
 
-- **IF `superpowers:subagent-driven-development` is available** → use it, but only its per-task
-  loop (read plan → dispatch implementer → task reviewer → fix loop → next task). Stop there.
-- **ELSE** → dispatch the same loop by hand via the **Agent** tool: one task at a time, in plan
-  order, implementer → reviewer → fix loop.
-- **ELSE (no subagent dispatch at all)** → implement the plan yourself, task by task, and say
+- **Primary** → dispatch the loop via the **Agent** tool, one task at a time in plan order, using
+  the bundled implementer/task-reviewer prompt templates and the `task-brief` / `review-package`
+  scripts. The reference file carries the full procedure.
+- **Fallback (no subagent dispatch at all)** → implement the plan yourself, task by task, and say
   so — a self-reviewed implementation is materially weaker evidence.
 
 Before dispatching anything: verify the freeze held (`git status --porcelain` shows only the
@@ -311,9 +311,9 @@ Run the project's **full build, tests, and lint** — the whole suite, not just 
 task-scoped reviews touched — and confirm they pass **before claiming anything**. Evidence
 before assertions (Operating rules).
 
-- **IF `superpowers:verification-before-completion` is available** → use it.
-- **ELSE** → run the project's own commands (discover them from `package.json` / `Makefile` /
-  `justfile` / CI config) and read the output.
+Run the project's own build/test/lint (discover them from `package.json` / `Makefile` / `justfile` /
+CI config) and read the output. The iron law: **no completion claim without fresh evidence from a
+command run in this message** — "should pass" and a linter that's green are not evidence.
 
 **GATE:** if anything is red, go **back to Phase 6** and fix it — do **not** proceed to a PR on
 a broken build. If it can't be made green (environmental, flaky, out of scope), stop and tell

@@ -1,22 +1,33 @@
 # Phase 7 — VERIFY
 
-Phase 6's task reviews were task-scoped, and its finishing step only ran the project's basic
-test command before offering the merge/PR/keep/discard menu. This phase proves the **finished
-change** is green in full — the complete build, the complete test suite, the complete lint, once,
-on the finished branch. That's not redundant with what Phase 6 already ran: no task reviewer ever
-saw the whole codebase, and the finishing step's test run may not include lint or a full build.
+Phase 6's task reviews were task-scoped, each seeing only one task's diff. This phase proves the
+**finished change** is green in full — the complete build, the complete test suite, the complete
+lint, once, on the finished branch. That's not redundant with what Phase 6 already ran: no task
+reviewer ever saw the whole codebase.
 
 There is a specific reason not to skip this because Phase 6 "already looked green." A test in a
-corner of the repo that no task touched — and that no task reviewer or the finishing step's quick
-test run thought to check — is exactly what this phase exists to catch.
+corner of the repo that no task touched — and that no task reviewer thought to check — is exactly
+what this phase exists to catch.
 
-## The branch
+## The iron law
 
-- **IF `superpowers:verification-before-completion` is available** → use it. Its whole point is
-  refusing to let "done" be asserted without evidence, which is this phase's point.
-- **ELSE** → run the project's own commands and read the output.
+```
+NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
+```
 
-Say which path ran.
+Claiming work is done, green, or passing without having run the command **in this message** is
+dishonesty, not efficiency — and violating the letter of this rule violates its spirit. Before you
+state any status or express any satisfaction ("great", "done", "should pass now"):
+
+1. **Identify** the command that proves the claim.
+2. **Run** the full command, fresh and complete.
+3. **Read** the whole output — exit code, failure count.
+4. **Verify** the output actually confirms the claim. If not, state the real status with evidence.
+5. **Only then** make the claim, *with* the evidence.
+
+Skipping any step is claiming, not verifying. "Should work", "I'm confident", "linter passed"
+(linter ≠ compiler), "the agent said success" (verify independently — check the VCS diff), "just
+this once", "I'm tired" — none of these are evidence. Run the command.
 
 ## Discovering the commands
 
@@ -45,8 +56,8 @@ Re-open the Phase 6 todo; don't leave it falsely complete.
 
 - **Small and local** (a naming fix, a guard clause, a missed null check) → fix it inline as the
   orchestrator, re-verify, push.
-- **Anything else** → re-run the affected task through `subagent-driven-development`'s
-  implementer → reviewer loop rather than hand-patching it.
+- **Anything else** → re-run the affected task through Phase 6's implementer → reviewer loop
+  rather than hand-patching it.
 - **If it can't be made green** — genuinely environmental, a pre-existing failure on the default
   branch, flaky in a way you can demonstrate, or out of scope — **stop and tell the human exactly
   what's failing**, with the output. Say what's yours and what was already broken (check: does it
