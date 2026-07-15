@@ -61,6 +61,7 @@ what to do when you think you need an exception.
                       ┌──────────────── CODE FREEZE (Rule Zero) ─────────────────┐
 0  IDENTIFY INPUT     │ which ticket/spec, from where                            │
 1  UNDERSTAND         │ read + ground in code; restate; GATE: ask if unclear     │
+1.5 BRAINSTORM        │ if design space is open: brainstorm (else skip)         │
 2  PLAN               │ writing-plans  (else plan mode)                         │
 3  HARDEN             │ plan-hardening, loop-until-clean                        │
 4  HANDOFF REVIEW     │ spec-handoff-review, loop-until-clean                   │
@@ -81,8 +82,8 @@ what to do when you think you need an exception.
 This pipeline only works if every phase actually runs, in order, with its gate honoured. To
 make that auditable instead of best-effort, **do these two things — they are not optional:**
 
-1. **Open the ledger first.** Before Phase 0, call **TodoWrite** with all twelve phases
-   (0–11) as separate items, in order. This is the first action the skill takes — before
+1. **Open the ledger first.** Before Phase 0, call **TodoWrite** with all the phases
+   (0–11, including the conditional Phase 1.5) as separate items, in order. This is the first action the skill takes — before
    reading the ticket, before any tool call. The ledger stays in front of you for the whole
    run so a phase can't quietly fall off.
 
@@ -93,7 +94,8 @@ make that auditable instead of best-effort, **do these two things — they are n
    do not skip ahead, and do not mark a phase done because it "probably would have passed".
 
 The only sanctioned deviations from strict 0→11 order are the ones the phases themselves
-document: **Phase 5** may be skipped (say so, with the receipt noting *why*), and a failed gate
+document: **Phase 1.5** and **Phase 5** are conditional and may be skipped (say so, with the
+receipt noting *why*), and a failed gate
 sends you **back** to an earlier phase — **Phase 6** (a task the implementer can't complete
 because the plan is wrong) back to Phase 2, **Phase 7** (red build) back to Phase 6, **Phase 10**
 (review findings) back to Phase 6 and then 7. When you go back, **re-open that todo**; don't
@@ -187,10 +189,41 @@ expensive error in the pipeline, because every later phase compounds it.
 **Exit:** a written restatement, with open questions resolved.
 → [`references/phase-1-understand.md`](references/phase-1-understand.md)
 
+## Phase 1.5 — BRAINSTORM (conditional)
+
+Phase 1 pins down *what* the ticket wants. This step is where you work out *how* — but only when
+that's genuinely open. Explore the candidate approaches, weigh their trade-offs, and settle on a
+direction **before** Phase 2 freezes it into a task list, so the plan commits to a considered
+design rather than the first one that came to mind.
+
+**You decide whether it runs — that judgement is the point of making it conditional.** It earns
+its place when the ticket fixes an *outcome* but leaves the *approach* open: several viable
+designs with real trade-offs, a data-model or API-shape choice that will ripple through every
+task, a "extend X or introduce Y?" fork the plan would otherwise resolve by accident. **Skip it**
+when the ticket is already prescriptive, the change is small and well-bounded, or there's one
+obvious way to build it — and say you skipped it and why. When you're unsure, lean toward a short
+brainstorm: it's cheap insurance against planning the wrong thing well, which is the failure mode
+the rest of this pipeline is *worst* at catching (Phases 3–5 harden the plan you have, not the
+one you didn't consider).
+
+- **IF `superpowers:brainstorming` is available** → use it. It's built for exactly this
+  pre-planning divergence — surfacing intent and design options before any plan exists.
+- **ELSE** → do an inline equivalent: lay out 2–3 candidate approaches, name the trade-offs and
+  the risk each carries, and choose one with a stated reason.
+
+Still inside the code freeze (Rule Zero): brainstorming is discussion, not construction. Its
+output is a **chosen direction that feeds Phase 2's plan** — never code, never an edit to the
+tree, not even a "quick spike". If it surfaces a new open question about the *requirement* rather
+than the design, that's a signal to loop back to Phase 1's gate and ask the human before planning
+on a guess.
+
+**Exit:** a chosen approach with its rationale, ready to plan against — or an explicit, justified
+skip. → [`references/phase-1.5-brainstorm.md`](references/phase-1.5-brainstorm.md)
+
 ## Phase 2 — PLAN
 
-Turn the understanding into a concrete, ordered implementation plan: numbered tasks, the
-files each touches, the tests, and the risks.
+Turn the understanding — and the approach chosen in Phase 1.5, if it ran — into a concrete,
+ordered implementation plan: numbered tasks, the files each touches, the tests, and the risks.
 
 - **IF `superpowers:writing-plans` is available** → use it; it produces a structured,
   reviewable plan with `### Task N` sections — the shape Phase 6 reads directly.
