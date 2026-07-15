@@ -1,0 +1,37 @@
+plugins/engineering/skills/ticket-to-pr/SKILL.md
+  s_ce47ae430d1601::t_4d3f2c67ce83d2 21-26,66,72-73,114,137-138,146-149,229-232,234-235,285-295,314-316
+plugins/engineering/skills/ticket-to-pr/references/phase-10-fix-findings.md
+  s_ce47ae430d1601::t_20befc66b62717 28-29
+plugins/engineering/skills/ticket-to-pr/references/phase-2-plan.md
+  s_ce47ae430d1601::t_98f601c6d0f110 3-7,9-81,83-159,161-162,165
+plugins/engineering/skills/ticket-to-pr/references/phase-6-implement.md
+  s_ce47ae430d1601::t_1040d145ada66e 3-11,14-17,21-41,51-53,55,57-60,69-164,166,168-170,172-178,182-185,187-188,191
+plugins/engineering/skills/ticket-to-pr/references/phase-7-verify.md
+  s_ce47ae430d1601::t_37364bc3d93b4d 3-6,9-10,12,14-16,18-30,59-60
+plugins/engineering/skills/ticket-to-pr/references/prompts/implementer.md
+  s_ce47ae430d1601::t_d58d64b450900a 1-143
+plugins/engineering/skills/ticket-to-pr/references/prompts/task-reviewer.md
+  s_ce47ae430d1601::t_910947d19194cf 1-189
+plugins/engineering/skills/ticket-to-pr/scripts/build-workspace
+  s_ce47ae430d1601::t_e3c71d44ced8e8 1-22
+plugins/engineering/skills/ticket-to-pr/scripts/review-package
+  s_ce47ae430d1601::t_626a309a2e1e8a 1-44
+plugins/engineering/skills/ticket-to-pr/scripts/task-brief
+  s_ce47ae430d1601::t_709b900092cd88 1-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "cd772c8b84e7d843d89ea2c3b6658f8da4d66b83",
+  "prompts": {},
+  "sessions": {
+    "s_ce47ae430d1601": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "268717ea-e397-4c6d-ad28-afb001908701",
+        "model": "unknown"
+      },
+      "human_author": "Loup Peluso <loup.peluso@gmail.com>"
+    }
+  }
+}
